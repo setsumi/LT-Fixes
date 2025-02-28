@@ -166,43 +166,7 @@ def uncompress(self, savep):
 
 @threader
 def versioncheckthread(self):
-    versionchecktask.put(True)
-    while True:
-        x = versionchecktask.get()
-        gobject.baseobject.update_avalable = False
-        self.progresssignal4.emit("", 0)
-        if not x:
-            continue
-        self.versiontextsignal.emit("获取中")  # ,'',url,url))
-        _version = trygetupdate()
-
-        if _version is None:
-            sversion = "获取失败"
-        else:
-            sversion = _version[0]
-        self.versiontextsignal.emit(sversion)
-        if getcurrexe().endswith("python.exe"):
-            continue
-        version = winsharedutils.queryversion(getcurrexe())
-        need = (
-            version
-            and _version
-            and version < tuple(int(_) for _ in _version[0][1:].split("."))
-        )
-        if not (need and globalconfig["autoupdate"]):
-            continue
-        self.progresssignal4.emit("……", 0)
-        savep = updatemethod(_version[1:], self)
-        if not savep:
-            self.progresssignal4.emit(_TR("自动更新失败，请手动更新"), 0)
-            continue
-
-        uncompress(self, savep)
-        gobject.baseobject.update_avalable = True
-        self.downloadprogress_cache = (_TR("准备完毕，等待更新"), 10000)
-        gobject.baseobject.showtraymessage(
-            sversion, _TR("准备完毕，等待更新") + "\n" + _TR("点击消息后退出并开始更新")
-        )
+    return
 
 
 def createdownloadprogress(self):
@@ -314,37 +278,12 @@ def updatelog():
 def setTab_about1(self, basel):
 
     shuominggrid = [
-        ["Github", makehtml("https://github.com/HIllya51/LunaTranslator")],
-        ["项目网站", makehtml("{main_server}/")],
+        ["Github", makehtml("https://github.com/setsumi/LT-Fixes")],
         [
             "使用说明",
             makehtml("{docs_server}", show="https://docs.lunatranslator.org/"),
         ],
     ]
-    if getlanguse() == Languages.Chinese:
-        shuominggrid += [
-            [
-                "交流群",
-                makehtml("{main_server}/Resource/QQGroup", show="QQ群963119821"),
-            ],
-            ["如果你感觉该软件对你有帮助，欢迎微信扫码赞助，谢谢~"],
-        ]
-
-        shuominggrid += [[functools.partial(createimageview, self)]]
-    else:
-        shuominggrid += [
-            [
-                "Contact Me",
-                makehtml("{main_server}/Resource/DiscordGroup", show="Discord"),
-            ],
-            [],
-            [
-                "If you feel that the software is helpful to you, ",
-            ],
-            [
-                'welcome to become my <a href="https://patreon.com/HIllya51">sponsor</a>. Thank you ~ ',
-            ],
-        ]
     makescrollgrid(
         [
             [
