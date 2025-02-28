@@ -45,10 +45,10 @@ std::unordered_map<LANG_STRINGS_HOST, std::unordered_map<SUPPORT_LANG, const wch
                            {Russian, L"Процесс отключен %d"},
                        }},
         {ProjectHomePage, {
-                              {English, L"Github: https://github.com/setsumi/LT-Fixes"},
-                              {Chinese, L"Github： https://github.com/setsumi/LT-Fixes"},
-                              {TradChinese, L"GitHub：https://github.com/setsumi/LT-Fixes"},
-                              {Russian, L"Github: https://github.com/setsumi/LT-Fixes"},
+                              {English, L"Github: https://github.com/HIllya51/LunaTranslator"},
+                              {Chinese, L"Github: https://github.com/HIllya51/LunaTranslator"},
+                              {TradChinese, L"GitHub: https://github.com/HIllya51/LunaTranslator"},
+                              {Russian, L"Github: https://github.com/HIllya51/LunaTranslator"},
                           }},
         {UNMATCHABLEVERSION, {
                                  {English, L"The file version cannot be matched, may not work properly, please re-download again!"},
