@@ -1197,10 +1197,6 @@ class MAINUI:
             startgame(startwithgameuid)
 
     def mainuiloadafter(self):
-        version = str(winsharedutils.queryversion(getcurrexe()))
-        if version != globalconfig["load_doc_everytimes"]:
-            os.startfile(dynamiclink("{docs_server}"))
-            globalconfig["load_doc_everytimes"] = version
         self.WindowMessageCallback_ptr = winsharedutils.WindowMessageCallback_t(
             self.WindowMessageCallback
         )
