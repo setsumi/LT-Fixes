@@ -686,7 +686,7 @@ class resizableframeless(saveposwindow):
         elif self._corner_zuoshang.contains(pos):
             self._corner_drag_zuoshang = True
             self.isDragging.emit(True)
-        elif QRect(0, 0, 39, 29).contains(pos):
+        elif not globalconfig["selectable"] or QRect(0, 0, self.width(), 30).contains(pos):
             self._move_drag = True
             self.move_DragPosition = gpos - self.pos()
 

@@ -344,22 +344,9 @@ def setTab_update(self, basel):
                     type="grid",
                     grid=[
                         [
-                            "自动更新",
-                            (
-                                D_getsimpleswitch(
-                                    globalconfig,
-                                    "autoupdate",
-                                    callback=versionchecktask.put,
-                                ),
-                                0,
-                            ),
-                        ],
-                        [
                             "当前版本",
                             versionstring,
                             "",
-                            "最新版本",
-                            functools.partial(createversionlabel, self),
                             functools.partial(updatelog),
                         ],
                         [(functools.partial(createdownloadprogress, self), 0)],
