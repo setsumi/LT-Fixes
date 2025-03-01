@@ -423,6 +423,7 @@
     "transparent_tool": 50,
     "isshowhira": true,
     "locktools": true,
+    "locktoolsEx": false,
     "showfanyisource": false,
     "showfanyi": true,
     "autoread": false,
@@ -500,6 +501,7 @@
         400,
         400
     ],
+    "hovercolor": "#80000000",
     "anki_Orientation_V": true,
     "gamemanageruseversion": 0,
     "gamemanager_integrated_internal_layout": 2,
@@ -1218,16 +1220,6 @@
             ]
         }
     },
-    "update": {
-        "lunatranslator": {
-            "useproxy": true,
-            "name": "lunatranslator.org"
-        },
-        "github": {
-            "useproxy": true,
-            "name": "GitHub"
-        }
-    },
     "hirasetting": {
         "mecab": {
             "use": true,
@@ -1924,6 +1916,7 @@
     "mustocr_interval": 5,
     "ocrmininterval": 1,
     "selectable": true,
+    "selectableEx": false,
     "autoupdate": true,
     "proxies": null,
     "viewlistpos": 0,

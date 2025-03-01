@@ -86,6 +86,7 @@ class TextBrowser(WebviewWidget, dataget):
         self.showhidert(globalconfig["isshowhira"])
         self.setfontstyle()
         self.setdisplayrank(globalconfig["displayrank"])
+        self.sethovercolor(globalconfig["hovercolor"])
         self.parent().refreshcontent()
 
     def refreshcontent_before(self):
@@ -238,6 +239,9 @@ class TextBrowser(WebviewWidget, dataget):
         )
         QApplication.sendEvent(self, event)
 
+    def sethovercolor(self, color):
+        self.debugeval('sethovercolor("{}")'.format(quote(color)))
+
     def calllunaEnter(self):
         QApplication.sendEvent(self.window(), QEvent(QEvent.Type.Enter))
 
@@ -257,6 +261,8 @@ class TextBrowser(WebviewWidget, dataget):
         QApplication.sendEvent(self, event)
 
     def calllunaMouseMove(self, x, y):
+        if globalconfig["selectable"] and globalconfig["selectableEx"]:
+            return
         pos = self.parsexyaspos(x, y)
         event = QMouseEvent(
             QEvent.Type.MouseMove,
@@ -414,6 +420,6 @@ class TextBrowser(WebviewWidget, dataget):
 
     def GetSelectedText(self):
         ret = []
-        self.eval("window.getSelection().toString()", ret.append)
+        self.eval("getCleanSelectionText()", ret.append)
         if ret:
             return json.loads(ret[0])
