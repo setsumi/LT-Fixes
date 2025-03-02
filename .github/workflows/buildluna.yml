@@ -1,6 +1,7 @@
 name: buildluna
 on:
   workflow_call:
+  workflow_dispatch:
 jobs:
   build_cpp_xp:
     runs-on: windows-2019
