@@ -348,7 +348,7 @@ class texthook(basetext):
                     break
             except:
                 print_exc()
-            time.sleep(2)
+            time.sleep(1)
 
     @property
     def gameuid(self):
