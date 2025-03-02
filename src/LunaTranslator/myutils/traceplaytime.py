@@ -58,7 +58,6 @@ class playtimemanager:
         except:
             pass
 
-        threading.Thread(target=self.checkgameplayingthread).start()
 
     def trycastoldversion(self):
         for _id, gamepath in self.sqlsavegameinfo.execute(
