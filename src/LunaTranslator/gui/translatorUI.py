@@ -292,7 +292,7 @@ class TranslatorWindow(resizableframeless):
         tracehwnd = None
 
         while True:
-            time.sleep(0.01)
+            time.sleep(0.1)
             if self._move_drag:
                 lastpos = None
                 continue
