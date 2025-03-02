@@ -255,7 +255,7 @@ namespace
         s = std::regex_replace(s, std::regex("[\\s]"), "");
         s = std::regex_replace(s, std::regex("@[a-z]"), "");
         // s = std::regex_replace(s, std::regex("＄"), "");
-        strReplace(s, "\x81\x90", "");
+        strReplace(s, "\x81\x90");
         buffer->from(s);
     }
     void FPCSG00401(TextBuffer *buffer, HookParam *hp)
@@ -288,11 +288,11 @@ namespace
     void PCSG00855(TextBuffer *buffer, HookParam *)
     {
         StringFilter(buffer, TEXTANDLEN(u8"#n　"));
+        StringFilter(buffer, TEXTANDLEN(u8"#n"));
     }
     void PCSG01150(TextBuffer *buffer, HookParam *hp)
     {
-        StringFilter(buffer, TEXTANDLEN(u8"#n　"));
-        StringFilter(buffer, TEXTANDLEN(u8"#n"));
+        PCSG00855(buffer, hp);
         PCSG00592(buffer, hp);
     }
     void PCSG01260_T(TextBuffer *buffer, HookParam *)
@@ -309,6 +309,10 @@ namespace
     void PCSG00787(TextBuffer *buffer, HookParam *)
     {
         CharFilter(buffer, '\n');
+    }
+    void PCSG00502(TextBuffer *buffer, HookParam *)
+    {
+        CharFilter(buffer, L'\n');
     }
     void PCSG01284(TextBuffer *buffer, HookParam *)
     {
@@ -370,8 +374,8 @@ namespace
         auto s = buffer->strA();
         //.replace(/㌔/g, '⁉')
         //.replace(/㍉/g, '!!')
-        strReplace(s, "\x87\x60", "");
-        strReplace(s, "\x87\x5f", "");
+        strReplace(s, "\x87\x60");
+        strReplace(s, "\x87\x5f");
         buffer->from(s);
     }
     void PCSG00472(TextBuffer *buffer, HookParam *hp)
@@ -379,7 +383,7 @@ namespace
         auto s = buffer->strA();
         strReplace(s, "\x81\x55", "!?");
         strReplace(s, "\x81\x54", "!!");
-        strReplace(s, "\x81\x40", "");
+        strReplace(s, "\x81\x40");
         s = std::regex_replace(s, std::regex("(#n)+"), "");
         s = std::regex_replace(s, std::regex("#[A-Za-z]+\\[(\\d*[.])?\\d+\\]"), "");
         buffer->from(s);
@@ -451,7 +455,7 @@ namespace
         else
         {
             last = s;
-            strReplace(s, "\n", "");
+            strReplace(s, "\n");
             auto pos = s.find(u8"×");
             if (pos != s.npos)
                 s = s.substr(pos + strlen(u8"×"));
@@ -662,7 +666,7 @@ namespace
         if (last == s)
             return buffer->clear();
         last = s;
-        strReplace(s, "#n", "");
+        strReplace(s, "#n");
         buffer->from(s);
     }
     void FPCSG00815(TextBuffer *buffer, HookParam *hp)
@@ -933,15 +937,22 @@ namespace
         auto s = buffer->strA();
         s = std::regex_replace(s, std::regex(R"(#r(.*?)\|(.*?)#)"), "$1");
         s = std::regex_replace(s, std::regex(R"(@r(.*?)@\d)"), "$1");
-        strReplace(s, R"(\c)", "");
-        strReplace(s, R"(\n)", "");
+        strReplace(s, R"(\c)");
+        strReplace(s, R"(\n)");
         buffer->from(s);
     }
     void PCSG01197(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
         s = std::regex_replace(s, std::regex(R"(#r(.*?)\|(.*?)#)"), "$1");
-        strReplace(s, R"(@w)", "");
+        strReplace(s, R"(@w)");
+        buffer->from(s);
+    }
+    void PCSG00433(TextBuffer *buffer, HookParam *hp)
+    {
+        CharFilter(buffer, L'\n');
+        auto s = buffer->strW();
+        s = std::regex_replace(s, std::wregex(LR"(<CLT \d+>(.*?)<CLT>)"), L"$1");
         buffer->from(s);
     }
     auto _ = []()
@@ -1118,6 +1129,8 @@ namespace
             {0x8001a860, {CODEC_UTF8, 8, 0, 0, PCSG00938, "PCSG00938"}},
             {0x80022bd2, {CODEC_UTF8, 4, 0x14, 0, PCSG00938, "PCSG00938"}},
             {0x80022bf0, {CODEC_UTF8, 5, 0, 0, PCSG00938, "PCSG00938"}},
+            // ワンド オブ フォーチュン Ｒ２ ＦＤ ～君に捧げるエピローグ～
+            {0x80035B80, {CODEC_UTF8, 6, 0, 0, PCSG00855, "PCSG01208"}},
             // I DOLL U
             {0x8000AC70, {CODEC_UTF8, 0, 0, 0, PCSG00833, "PCSG00592"}}, // 需要自己替换#Name[1] #Name[2]
             {0x8000AE7E, {CODEC_UTF8, 4, 0, 0, PCSG00592, "PCSG00592"}},
@@ -1255,6 +1268,14 @@ namespace
             {0x80022B46, {0, 2, 0, PCSG01245, 0, "PCSG01245"}},
             // 幕末Rock 超魂
             {0x8000BF18, {0, 4, 0, 0, PCSG01247, "PCSG00425"}},
+            // your diary +
+            {0x800482CE, {0, 0, 0, 0, FPCSG00815, "PCSG01267"}},
+            // 絶対絶望少女　ダンガンロンパ Another Episode
+            {0x80086CB8, {CODEC_UTF16, 1, 0, 0, PCSG00433, "PCSG00433"}},
+            // 夢現Re:Master
+            {0x8000CD76, {CODEC_UTF8, 2, 0, 0, 0, "PCSG01266"}},
+            // 結城友奈は勇者である　樹海の記憶
+            {0x800E954E, {CODEC_UTF16, 0, 0, 0, PCSG00502, "PCSG00502"}},
         };
         return 1;
     }();

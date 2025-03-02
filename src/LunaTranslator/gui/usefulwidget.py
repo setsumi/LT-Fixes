@@ -473,9 +473,6 @@ class MySwitch(QAbstractButton):
     def event(self, a0: QEvent) -> bool:
         if a0.type() == QEvent.Type.MouseButtonDblClick:
             return True
-        elif a0.type() == QEvent.Type.EnabledChange:
-            self.setEnabled(not self.isEnabled())
-            return True
         elif a0.type() == QEvent.Type.FontChange:
             self.__loadsize()
         return super().event(a0)
@@ -2837,7 +2834,7 @@ class IconButton(QPushButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setStyleSheet("border:transparent;padding: 0px;")
         self.setCheckable(checkable)
-        self.setEnabled(enable and bool(self._icon))
+        self.setEnabled(enable and (bool(icon) or bool(qicon)))
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.resizedirect()
 

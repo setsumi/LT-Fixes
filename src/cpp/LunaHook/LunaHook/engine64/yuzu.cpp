@@ -50,7 +50,7 @@ namespace
         int padding;
         decltype(HookParam::text_fun) hookfunc;
         decltype(HookParam::filter_fun) filterfun;
-        uint64_t _id;
+        std::variant<uint64_t, std::vector<uint64_t>> _id;
         const char *_version;
     };
     std::unordered_map<uint64_t, emfuncinfo> emfunctionhooks;
@@ -67,7 +67,23 @@ namespace
         {
             // 判断是有效的info
             auto checkversion = (em._version == 0) || (std::string(em._version) == (game_info.version));
-            auto checkid = em._id == game_info.id;
+            bool checkid;
+
+            auto visitf = [&](auto &&_ids)
+            {
+                using T = std::decay_t<decltype(_ids)>;
+                if constexpr (std::is_same_v<T, uint64_t>)
+                {
+                    checkid = _ids == game_info.id;
+                }
+                else if constexpr (std::is_same_v<T, std::vector<uint64_t>>)
+                {
+                    checkid = std::any_of(_ids.begin(), _ids.end(), [=](uint64_t _id)
+                                          { return _id == game_info.id; });
+                }
+            };
+            std::visit(visitf, em._id);
+
             return checkid && checkversion;
         }
         else
@@ -205,7 +221,31 @@ bool yuzu::attach_function()
             hpinternal.offset = op.offset;
             hpinternal.padding = op.padding;
             hpinternal.jittype = JITTYPE::YUZU;
-            NewHook(hpinternal, ull2hex(op._id).c_str());
+
+            std::string ids;
+            auto visitf = [&](auto &&_ids)
+            {
+                using T = std::decay_t<decltype(_ids)>;
+                if constexpr (std::is_same_v<T, uint64_t>)
+                {
+                    ids = ull2hex(_ids);
+                }
+                else if constexpr (std::is_same_v<T, std::vector<uint64_t>>)
+                {
+                    if (std::any_of(_ids.begin(), _ids.end(), [=](uint64_t _id)
+                                    { return _id == game_info.id; }))
+                    {
+                        ids = ull2hex(game_info.id);
+                    }
+                    else
+                    {
+                        ids = ull2hex(_ids[0]);
+                    }
+                }
+            };
+            std::visit(visitf, op._id);
+
+            NewHook(hpinternal, ids.c_str());
         }();
         delayinsertNewHook(em_address);
     };
@@ -728,8 +768,8 @@ namespace
     {
         auto s = buffer->strA();
         s = std::regex_replace(s, std::regex(R"(#r(.*?)\|(.*?)#)"), "$1");
-        strReplace(s, R"(\c)", "");
-        strReplace(s, R"(\n)", "");
+        strReplace(s, R"(\c)");
+        strReplace(s, R"(\n)");
         buffer->from(s);
     }
     template <int _1>
@@ -1552,8 +1592,8 @@ namespace
         strReplace(collect, "\x87\x85", "\x81\x5c");
         strReplace(collect, "\x87\x86", "\x81\x5c");
         strReplace(collect, "\x87\x87", "\x81\x5c");
-        strReplace(collect, "\n", "");
-        strReplace(collect, "\x81\x40", "");
+        strReplace(collect, "\n");
+        strReplace(collect, "\x81\x40");
         buffer->from(collect);
     }
     void T0100CF400F7CE000(hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
@@ -1905,8 +1945,8 @@ namespace
     void F010069E01A7CE000(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        strReplace(s, "\"", "");
-        strReplace(s, "#", "");
+        strReplace(s, "\"");
+        strReplace(s, "#");
         buffer->from(s);
     }
     void F0100509013040000(TextBuffer *buffer, HookParam *hp)
@@ -1936,8 +1976,8 @@ namespace
     void F01002BB00A662000(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        strReplace(s, "#n", "");
-        strReplace(s, "\x81\x40", "");
+        strReplace(s, "#n");
+        strReplace(s, "\x81\x40");
         s = std::regex_replace(s, std::regex(R"(#Ruby\[(.*?),(.*?)\])"), "$1");
         s = std::regex_replace(s, std::regex(R"(#(\w+?)\[[\d,\.]+?\])"), ""); // #Pos[0,42]#Speed[5]#Effect[0]#Scale[1] #Scale[0.9]
         buffer->from(s);
@@ -1946,7 +1986,7 @@ namespace
     {
         auto s = buffer->strA();
         strReplace(s, "[n]", "\n");
-        strReplace(s, "[#]", ""); // 分两段显示
+        strReplace(s, "[#]"); // 分两段显示
         buffer->from(s);
     }
     void F01007A901E728000(TextBuffer *buffer, HookParam *hp)
@@ -2007,6 +2047,22 @@ namespace
         s = std::regex_replace(s, std::regex(u8"@n"), "");
         s = std::regex_replace(s, std::regex(u8R"(@[_\*\d\w]*)"), "");
         s = std::regex_replace(s, std::regex(u8R"(\*)"), "");
+        buffer->from(s);
+    }
+    void F010014A01ADA0000(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strW();
+        if (!startWith(s, L"<color="))
+            return buffer->clear();
+        s = std::regex_replace(s, std::wregex(L"<color=\\w+>(.*?)</color>"), L"$1");
+        auto spls = strSplit(s, L",");
+        if (spls.size() != 4)
+            return buffer->clear();
+        if (Trim(spls[0]) != L"mes")
+            return buffer->clear();
+        auto fuck = std::regex_replace(spls[1], std::wregex(L"（(.*?)）"), L"");
+        fuck = std::regex_replace(fuck, std::wregex(L"・.*"), L"");
+        s = L"【" + Trim(fuck) + L"】" + Trim(strReplace(spls[3], L"\\n"));
         buffer->from(s);
     }
     void F0100AA1013B96000(TextBuffer *buffer, HookParam *hp)
@@ -2445,9 +2501,9 @@ namespace
     void F0100A250191E8000(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        strReplace(s, "\n", "");
+        strReplace(s, "\n");
         s = std::regex_replace(s, std::regex(R"(\\d$|^\@[a-z]+|#.*?#|\$)"), "");
-        strReplace(s, "\x81\x40", "");
+        strReplace(s, "\x81\x40");
         s = std::regex_replace(s, std::regex(R"(@w|\\c)"), "");
         if (choice)
             s = std::regex_replace(s, std::regex(R"(, ?\w+)"), "");
@@ -3744,6 +3800,29 @@ namespace
             // この青空に約束を― Refine 1.0.0 & 1.0.1
             {0x804F2AC0, {CODEC_UTF8, 1, 0, 0, F01001E601F6B8000_text, 0x01006E201FC0A000ull, nullptr}},
             {0x804F2B80, {CODEC_UTF8, 0, 0, 0, F01001E601F6B8000_name, 0x01006E201FC0A000ull, nullptr}},
+            // 結城友奈は勇者である花結いのきらめきVol.1
+            {0x81C2FBE4, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x010014A01ADA0000ull, "1.0.0"}},
+            {0x81F2B984, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x010014A01ADA0000ull, "1.0.3"}},
+            // 結城友奈は勇者である花結いのきらめきVol.2
+            {0x82D259B4, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01006F901ADA2000ull, "1.0.0"}},
+            {0x81FCC294, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01006F901ADA2000ull, "1.0.3"}},
+            // 結城友奈は勇者である花結いのきらめきVol.3 01002DF01ADA4000
+            // 結城友奈は勇者である花結いのきらめきVol.4 0100A2901ADA6000   存在瑕疵：[!?]符号会把句子此符号之后的内容给丢掉。
+            {0x82D5E904, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, std::vector<uint64_t>{0x01002DF01ADA4000ull, 0x0100A2901ADA6000ull}, "1.0.0"}},
+            {0x82D5E804, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01002DF01ADA4000ull, "1.0.3"}},
+            {0x82022244, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x0100A2901ADA6000ull, "1.0.3"}},
+            // 結城友奈は勇者である花結いのきらめきVol.5
+            {0x82AEDA74, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x0100D3601ADA8000ull, "1.0.0"}},
+            {0x82B10004, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x0100D3601ADA8000ull, "1.0.1"}},
+            // 結城友奈は勇者である花結いのきらめきVol.6
+            {0x81DFDFD4, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x010073D01ADAA000ull, "1.0.0"}},
+            {0x82AE2024, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x010073D01ADAA000ull, "1.0.1"}},
+            // 結城友奈は勇者である花結いのきらめきVol.7
+            {0x81DFE124, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x010085C01ADAC000ull, "1.0.0"}},
+            {0x82D5E654, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x010085C01ADAC000ull, "1.0.1"}},
+            // 結城友奈は勇者である花結いのきらめきVol.8
+            {0x81FEB714, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01000DD01ADAE000ull, "1.0.0"}},
+            {0x81DDD634, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01000DD01ADAE000ull, "1.0.1"}},
         };
         return 1;
     }();
