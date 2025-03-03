@@ -65,7 +65,7 @@ namespace
     {
         if ((game_info.version.size()) && game_info.name.size() && (game_info.id != 0))
         {
-            // 判断是有效的info
+            /* 判断是有效的info */
             auto checkversion = (em._version == 0) || (std::string(em._version) == (game_info.version));
             bool checkid;
 
@@ -88,8 +88,10 @@ namespace
         }
         else
         {
-            // 加载游戏后在hook，没有办法获取id。
-            // 标题里没有id，只有version，没啥必要判断了，直接true得了。
+            /*
+                加载游戏后在hook，没有办法获取id。
+                标题里没有id，只有version，没啥必要判断了，直接true得了。
+            */
             return true;
         }
     }
@@ -142,9 +144,11 @@ bool Hook_Network_RoomMember_SendGameInfo()
         hp.address = addr;
         hp.text_fun = [](hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
         {
-            // void __fastcall Network::RoomMember::SendGameInfo(
-            //     Network::RoomMember *this,
-            //     const AnnounceMultiplayerRoom::GameInfo *game_info)
+            /*
+                void __fastcall Network::RoomMember::SendGameInfo(
+                Network::RoomMember *this,
+                const AnnounceMultiplayerRoom::GameInfo *game_info)
+            */
             game_info = *(GameInfo *)context->rdx;
             if (game_info.id)
             {
@@ -1989,6 +1993,12 @@ namespace
         strReplace(s, "[#]"); // 分两段显示
         buffer->from(s);
     }
+    void F0100D7E01E998000(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilterBetween(buffer, TEXTANDLEN(L"<"), TEXTANDLEN(L">"));
+        StringFilter(buffer, TEXTANDLEN(L"　\n"));
+        CharFilter(buffer, L'\n');
+    }
     void F01007A901E728000(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strW();
@@ -2192,7 +2202,7 @@ namespace
             };
             static auto _ = NewHook(hp, "01009E600FAF6000");
             static std::map<uint64_t, uintptr_t> mp;
-            // 这个address会被触发两次。
+            /* 这个address会被触发两次。 */
             if (mp.find(hpx->emu_addr) == mp.end())
                 mp[hpx->emu_addr] = hpx->address;
             if (mp[hpx->emu_addr] != hpx->address)
@@ -2379,7 +2389,6 @@ namespace
             hp.type = CODEC_UTF8 | USING_STRING;
             static auto _ = NewHook(hp, "0100A4700BC98000");
             TT0100A4700BC98000(s.c_str());
-            // buffer->clear();
         }
     }
     namespace
@@ -2598,29 +2607,29 @@ namespace
             // Memories Off ～それから～
             {0x8003fb7c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100B4A01326E000ull, "1.0.0"}},
             {0x8003fb8c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100B4A01326E000ull, "1.0.1"}},
-            // ファミコン探偵倶楽部 消えた後継者
-            {0x80052a10, {CODEC_UTF16, 3, 0, mages_readstring, 0, 0x0100B4500F7AE000ull, "1.0.0"}},
-            // ファミコン探偵倶楽部PartII うしろに立つ少女
-            {0x8004cb30, {CODEC_UTF16, 3, 0, mages_readstring, 0, 0x010078400F7B0000ull, "1.0.0"}},
             // Memories Off 2nd
             {0x8003ee0c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100D31013274000ull, "1.0.0"}},
             {0x8003ee1c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100D31013274000ull, "1.0.1"}},
-            // 想い出にかわる君 ～メモリーズオフ～
-            {0x8003ef6c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100FFA013272000ull, "1.0.0"}},
-            {0x8003ef7c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100FFA013272000ull, "1.0.1"}},
-            // メモリーズオフ6 ～T-wave～
-            {0x80043d7c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010047A013268000ull, "1.0.0"}},
-            {0x80043d5c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010047A013268000ull, "1.0.1"}},
-            // メモリーズオフ ゆびきりの記憶
-            {0x800440ec, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010079C012896000ull, "1.0.0"}},
             // Memories Off #5 とぎれたフィルム
             {0x8003f6ac, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010073901326C000ull, "1.0.0"}},
             {0x8003f5fc, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010073901326C000ull, "1.0.1"}},
+            // メモリーズオフ ゆびきりの記憶
+            {0x800440ec, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010079C012896000ull, "1.0.0"}},
+            // メモリーズオフ6 ～T-wave～
+            {0x80043d7c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010047A013268000ull, "1.0.0"}},
+            {0x80043d5c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x010047A013268000ull, "1.0.1"}},
+            // 想い出にかわる君 ～メモリーズオフ～
+            {0x8003ef6c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100FFA013272000ull, "1.0.0"}},
+            {0x8003ef7c, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100FFA013272000ull, "1.0.1"}},
             // シンスメモリーズ 星天の下で
             {0x80048cc8, {CODEC_UTF16, 4, 0, mages_readstring, 0, 0x0100E94014792000ull, 0}}, // line + name => join
             {0x8004f44c, {CODEC_UTF16, 4, 0, mages_readstring, 0, 0x0100E94014792000ull, 0}}, // fast trophy
             {0x8004f474, {CODEC_UTF16, 4, 0, mages_readstring, 0, 0x0100E94014792000ull, 0}}, // prompt
             {0x80039dc0, {CODEC_UTF16, 4, 0, mages_readstring, 0, 0x0100E94014792000ull, 0}}, // choice
+            // ファミコン探偵倶楽部 消えた後継者
+            {0x80052a10, {CODEC_UTF16, 3, 0, mages_readstring, 0, 0x0100B4500F7AE000ull, "1.0.0"}},
+            // ファミコン探偵倶楽部PartII うしろに立つ少女
+            {0x8004cb30, {CODEC_UTF16, 3, 0, mages_readstring, 0, 0x010078400F7B0000ull, "1.0.0"}},
             // やはりゲームでも俺の青春ラブコメはまちがっている。
             {0x8005DFB8, {CODEC_UTF16, 0, 0, mages_readstring, 0, 0x0100E0D0154BC000ull, "1.0.0"}},
             // CHAOS;HEAD NOAH
@@ -2740,16 +2749,6 @@ namespace
             {0x80008d88, {CODEC_UTF16, 1, 0, ReadTextAndLenDW, F01006F000B056000, 0x01006F000B056000ull, "1.0.1"}}, // Location
             // Norn9 Var Commons
             {0x8003E874, {CODEC_UTF8, 0, 0, 0, F0100068019996000, 0x0100068019996000ull, "1.0.0"}}, // English
-            // 薄桜鬼 真改 遊戯録　隊士達の大宴会 for Nintendo Switch   三合一
-            {0x80016730, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其一
-            {0x8013AAA0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其二
-            {0x8009C8A0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其三
-            {0x800167B0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其一
-            {0x8013AFA0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其二
-            {0x8009CCE0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其三
-            // 薄桜鬼SSL ～sweet school life～ for Nintendo Switch
-            {0x8004E71C, {CODEC_UTF8, 1, 0, 0, F01004EB01A328000, 0x01004EB01A328000ull, "1.0.0"}},
-            {0x8004EAEC, {CODEC_UTF8, 1, 0, 0, F01004EB01A328000, 0x01004EB01A328000ull, "1.0.1"}},
             // 薄桜鬼 真改 万葉ノ抄
             {0x8004E8F0, {CODEC_UTF8, 1, 0, 0, F010001D015260000, 0x0100EA601A0A0000ull, "1.0.0"}},
             // 薄桜鬼 真改 天雲ノ抄
@@ -2763,6 +2762,16 @@ namespace
             {0x8004c3f4, {CODEC_UTF8, 1, 0, 0, F0100925014864000, 0x0100D57014692000ull, "1.0.0"}},
             {0x8005389c, {CODEC_UTF8, 0, 0, 0, F0100925014864000, 0x0100D57014692000ull, "1.0.0"}},
             {0x80059b68, {CODEC_UTF8, 0, 0, 0, F0100925014864000, 0x0100D57014692000ull, "1.0.0"}},
+            // 薄桜鬼SSL ～sweet school life～ for Nintendo Switch
+            {0x8004E71C, {CODEC_UTF8, 1, 0, 0, F01004EB01A328000, 0x01004EB01A328000ull, "1.0.0"}},
+            {0x8004EAEC, {CODEC_UTF8, 1, 0, 0, F01004EB01A328000, 0x01004EB01A328000ull, "1.0.1"}},
+            // 薄桜鬼 真改 遊戯録　隊士達の大宴会 for Nintendo Switch //三合一
+            {0x80016730, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其一
+            {0x8013AAA0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其二
+            {0x8009C8A0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其三
+            {0x800167B0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其一
+            {0x8013AFA0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其二
+            {0x8009CCE0, {CODEC_UTF8, 0, 0, 0, F01002BB00A662000, 0x010046601C024000ull, "1.0.0"}}, // name+text 其三
             // Chrono Cross: The Radical Dreamers Edition
             {0x802b1254, {CODEC_UTF32, 1, 0, 0, 0, 0x0100AC20128AC000ull, "1.0.2"}}, // Text
             // AIR
@@ -3232,7 +3241,7 @@ namespace
             // スペードの国のアリス ～Wonderful Black World～
             {0x819dbdc8, {CODEC_UTF16, 0, 0x14, 0, F0100AB100E2FA000, 0x0100AB100E2FA000ull, "1.0.0"}},
             {0x81f8e564, {CODEC_UTF16, 1, 0x14, 0, F0100AB100E2FA000, 0x0100AB100E2FA000ull, "1.0.0"}},
-            // 十三支演義 偃月三国伝1・2 for Nintendo Switch (Juuzaengi ~Engetsu Sangokuden~)
+            // 十三支演義 偃月三国伝1・2 for Nintendo Switch
             {0x82031f20, {CODEC_UTF16, 2, 0, ReadTextAndLenDW, F0100DA201E0DA000, 0x01003D2017FEA000ull, "1.0.0"}}, // name
             {0x82ef9550, {CODEC_UTF16, 1, 0, ReadTextAndLenDW, F0100DA201E0DA000, 0x01003D2017FEA000ull, "1.0.0"}}, // dialogue
             {0x83252e0c, {CODEC_UTF16, 0, 0, ReadTextAndLenDW, F0100DA201E0DA000, 0x01003D2017FEA000ull, "1.0.0"}}, // choice
@@ -3389,7 +3398,7 @@ namespace
             {0x80086e70, {CODEC_UTF8, 0, 0, T010012A017F18000, 0, 0x010012A017F18000ull, "1.0.2"}},
             // 月姫 -A piece of blue glass moon-
             {0x800ac290, {CODEC_UTF8, 0, 0, T010012A017F18000, 0, 0x01001DC01486A000ull, 0}}, // 1.0.1,1.0.2
-            // 映画 五等分の花嫁　～君と過ごした五つの思い出～ (JP)
+            // 映画 五等分の花嫁　～君と過ごした五つの思い出～
             {0x80011688, {CODEC_UTF8, 1, 0, 0, F01005E9016BDE000, 0x01005E9016BDE000ull, "1.0.0"}}, // dialogue, menu, choice, name
             // FLOWERS 四季
             {0x8006f940, {CODEC_UTF16, 1, 0, 0, F01002AE00F442000, 0x01002AE00F442000ull, "1.0.1"}},
@@ -3694,7 +3703,7 @@ namespace
             // EVE ghost enemies
             {0x80053900, {0, 1, 0, 0, F01008BA00F172000, 0x01007BE0160D6000ull, "1.0.0"}},
             {0x80052440, {0, 1, 0, 0, F01008BA00F172000, 0x01007BE0160D6000ull, "1.0.1"}},
-            // ニル・アドミラリの天秤 色ドリ撫子，二合一，其一
+            // ニル・アドミラリの天秤 色ドリ撫子 //二合一，其一
             {0x8000BDD0, {0, 8, 0, 0, F01002BB00A662000, 0x01002BB00A662000ull, "1.0.0"}}, // text
             {0x80019260, {0, 0, 0, 0, F01002BB00A662000, 0x01002BB00A662000ull, "1.0.0"}}, // name+text
             // 其二
@@ -3702,10 +3711,10 @@ namespace
             {0x8007C1D4, {0, 0, 0, 0, F01002BB00A662000, 0x01002BB00A662000ull, "1.0.0"}}, // name+text 这个两作都能提到。实际上只留这一个也行，但它显示完才有，速度慢。
             // 八剱伝
             {0x819ade74, {CODEC_UTF16, 1, 0, ReadTextAndLenDW, F01007A901E728000, 0x01007A901E728000ull, "1.0.1"}},
-            // 大正メビウスライン大全 三合一
+            // 大正メビウスライン大全 //三合一
             {0x800C43D4, {0, 0, 0, 0, F0100509013040000, 0x0100509013040000ull, "1.0.0"}}, // text
             {0x800C4468, {0, 0, 0, 0, F0100509013040000, 0x0100509013040000ull, "1.0.1"}}, // text
-            // 猛獣たちとお姫様 for Nintendo Switch  二合一
+            // 猛獣たちとお姫様 for Nintendo Switch //二合一
             {0x80115C70, {CODEC_UTF8, 0, 0, 0, F010001D015260000, 0x010035001D1B2000ull, "1.0.0"}}, // text
             {0x80115F20, {CODEC_UTF8, 0, 0, 0, F010001D015260000, 0x010035001D1B2000ull, "1.0.1"}}, // text
             // BEAST Darling! ～けもみみ男子と秘密の寮～
@@ -3724,7 +3733,7 @@ namespace
             // フルキス
             {0x804988A0, {CODEC_UTF8, 0, 0, 0, F0100FB50156E6000_1, 0x0100FB50156E6000ull, "1.0.0"}}, // text
             {0x804FECD4, {CODEC_UTF8, 1, 0, 0, F0100FB50156E6000_2, 0x0100FB50156E6000ull, "1.0.0"}}, // text+name->name
-            // フルキスS  1.0.0 & 1.0.1
+            // フルキスS  //1.0.0 & 1.0.1
             {0x804E7AF0, {CODEC_UTF8, 0, 0, 0, F0100FB50156E6000_1, 0x0100BEE0156D8000ull, nullptr}}, // text
             {0x804FF454, {CODEC_UTF8, 1, 0, 0, F0100FB50156E6000_2, 0x0100BEE0156D8000ull, nullptr}}, // text+name->name
             // アーキタイプ・アーカディア
@@ -3791,13 +3800,13 @@ namespace
             {0x80056424, {0, 0, 0, T01000A7019EBC000, 0, 0x01000A7019EBC000ull, "1.0.0"}},
             // 真流行り神3
             {0x800A3460, {CODEC_UTF8, 4, 0, 0, F0100AA1013B96000, 0x0100AA1013B96000ull, "1.0.0"}},
-            // 制服カノジョ まよいごエンゲージ 1.0.0 & 1.0.1
+            // 制服カノジョ まよいごエンゲージ //1.0.0 & 1.0.1
             {0x805DEB14, {CODEC_UTF8, 1, 0, 0, F01001E601F6B8000_text, 0x01001E601F6B8000ull, nullptr}},
             {0x8060E3F8, {CODEC_UTF8, 1, 0, 0, F01001E601F6B8000_name, 0x01001E601F6B8000ull, nullptr}},
-            // 制服カノジョ2 1.0.0 & 1.0.1
+            // 制服カノジョ2 //1.0.0 & 1.0.1
             {0x8058B940, {CODEC_UTF8, 1, 0, 0, F01001E601F6B8000_text, 0x010012C020B78000ull, nullptr}}, // 缺少第一句，且分段显示的缺少后半句
             {0x8058B8C0, {CODEC_UTF8, 1, 0, 0, F01001E601F6B8000_name, 0x010012C020B78000ull, nullptr}},
-            // この青空に約束を― Refine 1.0.0 & 1.0.1
+            // この青空に約束を― Refine //1.0.0 & 1.0.1
             {0x804F2AC0, {CODEC_UTF8, 1, 0, 0, F01001E601F6B8000_text, 0x01006E201FC0A000ull, nullptr}},
             {0x804F2B80, {CODEC_UTF8, 0, 0, 0, F01001E601F6B8000_name, 0x01006E201FC0A000ull, nullptr}},
             // 結城友奈は勇者である花結いのきらめきVol.1
@@ -3806,8 +3815,8 @@ namespace
             // 結城友奈は勇者である花結いのきらめきVol.2
             {0x82D259B4, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01006F901ADA2000ull, "1.0.0"}},
             {0x81FCC294, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01006F901ADA2000ull, "1.0.3"}},
-            // 結城友奈は勇者である花結いのきらめきVol.3 01002DF01ADA4000
-            // 結城友奈は勇者である花結いのきらめきVol.4 0100A2901ADA6000   存在瑕疵：[!?]符号会把句子此符号之后的内容给丢掉。
+            // 結城友奈は勇者である花結いのきらめきVol.3 //01002DF01ADA4000
+            // 結城友奈は勇者である花結いのきらめきVol.4 //0100A2901ADA6000   存在瑕疵：[!?]符号会把句子此符号之后的内容给丢掉。
             {0x82D5E904, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, std::vector<uint64_t>{0x01002DF01ADA4000ull, 0x0100A2901ADA6000ull}, "1.0.0"}},
             {0x82D5E804, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01002DF01ADA4000ull, "1.0.3"}},
             {0x82022244, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x0100A2901ADA6000ull, "1.0.3"}},
@@ -3823,6 +3832,9 @@ namespace
             // 結城友奈は勇者である花結いのきらめきVol.8
             {0x81FEB714, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01000DD01ADAE000ull, "1.0.0"}},
             {0x81DDD634, {CODEC_UTF16, 1, 0, 0, F010014A01ADA0000, 0x01000DD01ADAE000ull, "1.0.1"}},
+            // 冬園サクリフィス
+            {0x816CA374, {CODEC_UTF16, 1, 0, 0, F0100D7E01E998000, 0x0100D7E01E998000ull, "1.0.0"}},
+            {0x818c90d4, {CODEC_UTF16, 0, 0, ReadTextAndLenDW, 0, 0x0100D7E01E998000ull, "1.0.0"}},
         };
         return 1;
     }();

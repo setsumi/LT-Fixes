@@ -49,7 +49,7 @@ namespace
         hp.text_fun = [](hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
         {
             static std::wstring last;
-            // vita3k Vulkan模式GetWindowText会卡住
+            /* vita3k Vulkan模式GetWindowText会卡住 */
             auto getSecondSubstring = [](const std::wstring &str) -> std::wstring
             {
                 size_t firstPos = str.find(L'|');
@@ -1276,6 +1276,8 @@ namespace
             {0x8000CD76, {CODEC_UTF8, 2, 0, 0, 0, "PCSG01266"}},
             // 結城友奈は勇者である　樹海の記憶
             {0x800E954E, {CODEC_UTF16, 0, 0, 0, PCSG00502, "PCSG00502"}},
+            // 終わりのセラフ　運命の始まり
+            {0x8028394A, {CODEC_UTF8, 4, 0, 0, PCSG00787, "PCSG00728"}},
         };
         return 1;
     }();
