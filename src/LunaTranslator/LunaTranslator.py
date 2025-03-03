@@ -59,6 +59,7 @@ from rendertext.texttype import TextType, SpecialColor, TranslateColor
 class MAINUI:
     def __init__(self) -> None:
         super().__init__()
+        self.freezeclipboard = False
         self.update_avalable = False
         self.translators = {}
         self.cishus = {}
@@ -883,7 +884,7 @@ class MAINUI:
             return aclass(classname)
         except Exception as e:
             self.displayinfomessage(
-                dynamicapiname(classname) + " import failed : " + str(stringfyerror(e)),
+                _TR(dynamicapiname(classname)) + " import failed : " + str(stringfyerror(e)),
                 "<msg_error_Translator>",
             )
             raise e
