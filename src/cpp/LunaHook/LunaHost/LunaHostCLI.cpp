@@ -8,22 +8,27 @@ int main()
 	_setmode(_fileno(stdin), _O_U16TEXT);
 	wprintf_s(L"Usage: {'attach'|'detach'|hookcode} -Pprocessid\n");
 	fflush(stdout);
-	Host::Start([](auto) {}, [](auto) {}, [](auto &) {}, [](auto &) {}, [](TextThread &thread, std::wstring &output)
-				{
-			wprintf_s(L"[%I64X:%I32X:%I64X:%I64X:%I64X:%s:%s] %s\n",
-				thread.handle,
-				thread.tp.processId,
-				thread.tp.addr,
-				thread.tp.ctx,
-				thread.tp.ctx2,
-				thread.name.c_str(),
-				thread.hp.hookcode,
-				output.c_str()
-			);
-			fflush(stdout);
-			return false; });
+	Host::Start(
+	    [](DWORD) {},
+	    [](DWORD) {},
+	    [](TextThread &) {},
+	    [](TextThread &) {},
+	    [](TextThread &thread, std::wstring &output) {
+		wprintf_s(L"[%I64X:%I32X:%I64X:%I64X:%I64X:%s:%s] %s\n",
+		    thread.handle,
+		    thread.tp.processId,
+		    thread.tp.addr,
+		    thread.tp.ctx,
+		    thread.tp.ctx2,
+		    thread.name.c_str(),
+		    thread.hp.hookcode,
+		    output.c_str()
+		);
+		fflush(stdout);
+		return false; });
 	wchar_t input[500] = {};
-	SearchParam sp = {};
+	SearchParam sp;
+	memset(&sp, 0, sizeof(SearchParam));
 	sp.codepage = Host::defaultCodepage;
 	sp.length = 0;
 	while (fgetws(input, 500, stdin))

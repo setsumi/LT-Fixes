@@ -240,7 +240,6 @@ namespace Host
 		{
 			OnCreate(textThreadsByParams->try_emplace(console, console, HookParam{}, TR[CONSOLE]).first->second);
 			consolethread = &textThreadsByParams->at(console);
-			Host::AddConsoleOutput(TR[ProjectHomePage]);
 		}
 		// CreatePipe();
 	}
