@@ -34,7 +34,7 @@ namespace
         int padding;
         decltype(HookParam::text_fun) hookfunc;
         decltype(HookParam::filter_fun) filterfun;
-        const char *_id;
+        std::variant<const char *, std::vector<const char *>> _id;
     };
     std::unordered_map<uintptr_t, emfuncinfo> emfunctionhooks;
 }
@@ -43,7 +43,6 @@ namespace
 {
     void trygetgameinwindowtitle()
     {
-
         HookParam hp;
         hp.address = 0x3000;
         hp.text_fun = [](hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
@@ -68,11 +67,10 @@ namespace
                 auto game = getSecondSubstring(info.title);
                 if (!game.size())
                     continue;
-                std::wregex reg1(L"\\((.*?)\\)");
-                std::wsmatch match;
-                if (!std::regex_search(game, match, reg1))
+                auto match = re::search(game, L"\\((.*?)\\)");
+                if (!match)
                     return;
-                auto curr = match[1].str();
+                auto curr = match.value()[1].str();
                 if (last == curr)
                     return;
                 Vita3KGameID = wcasta(curr);
@@ -83,6 +81,29 @@ namespace
         hp.type = DIRECT_READ;
         NewHook(hp, "Vita3KGameInfo");
     }
+    auto MatchGameId = [](const auto &idsv) -> const char *
+    {
+        if (!Vita3KGameID.size())
+            return nullptr;
+        if (const auto *id = std::get_if<const char *>(&idsv))
+        {
+            if (Vita3KGameID == *id)
+                return *id;
+            return nullptr;
+        }
+        else if (const auto *ids = std::get_if<std::vector<const char *>>(&idsv))
+        {
+            for (auto &&id : *ids)
+            {
+                if (Vita3KGameID == id)
+                {
+                    return id;
+                }
+            }
+            return nullptr;
+        }
+        return nullptr;
+    };
 }
 bool vita3k::attach_function()
 {
@@ -109,7 +130,8 @@ bool vita3k::attach_function()
             if (emfunctionhooks.find(em_address) == emfunctionhooks.end())
                 return;
             auto op = emfunctionhooks.at(em_address);
-            if (Vita3KGameID.size() && (op._id != Vita3KGameID))
+            auto getmatched = MatchGameId(op._id);
+            if (!getmatched)
                 return;
             HookParam hpinternal;
             hpinternal.address = entrypoint;
@@ -123,7 +145,7 @@ bool vita3k::attach_function()
             hpinternal.offset = op.offset;
             hpinternal.padding = op.padding;
             hpinternal.jittype = JITTYPE::VITA3K;
-            NewHook(hpinternal, op._id);
+            NewHook(hpinternal, getmatched);
         }();
         delayinsertNewHook(em_address);
     };
@@ -135,19 +157,19 @@ namespace
     void FPCSG01023(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("<br>"), "");
-        s = std::regex_replace(s, std::regex("%CF11F"), "");
-        s = std::regex_replace(s, std::regex("%CFFFF"), "");
-        s = std::regex_replace(s, std::regex("%K%P"), "");
-        s = std::regex_replace(s, std::regex("%K%N"), "");
-        s = std::regex_replace(s, std::regex("\n"), "");
+        s = re::sub(s, "<br>");
+        s = re::sub(s, "%CF11F");
+        s = re::sub(s, "%CFFFF");
+        s = re::sub(s, "%K%P");
+        s = re::sub(s, "%K%N");
+        s = re::sub(s, "\n");
         buffer->from(s);
     }
     void FPCSG01282_1(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("(\\n)+"), " ");
-        s = std::regex_replace(s, std::regex("\\d$|^@[a-z]+|#.*?#|\\$"), "");
+        s = re::sub(s, "(\\n)+", " ");
+        s = re::sub(s, "\\d$|^@[a-z]+|#.*?#|\\$");
         buffer->from(s);
     }
     template <int idx>
@@ -167,6 +189,39 @@ namespace
         buffer->from((char *)(address - 3));
     }
 
+    void PCSG00595(hook_context *context, HookParam *hp1, TextBuffer *buffer, uintptr_t *split)
+    {
+        hp1->text_fun = nullptr;
+        hp1->type |= HOOK_EMPTY;
+        auto address = VITA3K::emu_arg(context)[0] + hp1->padding;
+        buffer->from((char *)address);
+        HookParam hp;
+        hp.address = address;
+        hp.type = DIRECT_READ;
+        hp.text_fun = [](hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
+        {
+            static std::string last;
+            std::string collect;
+            char *ptr = (char *)hp->address;
+            while (*ptr)
+            {
+                std::string s = ptr;
+                collect += s;
+                if (endWith(s, "\n"))
+                {
+                    collect = collect.substr(0, collect.size() - 1);
+                }
+                ptr += s.size() + 1;
+            }
+            strReplace(collect, "\x87\x6e");
+            if (startWith(collect, last))
+                buffer->from(collect.substr(last.size()));
+            else
+                buffer->from(collect);
+            last = collect;
+        };
+        static auto _ = NewHook(hp, hp1->name);
+    }
     void ReadU16TextAndLenDW(hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
     {
         auto address = VITA3K::emu_arg(context)[hp->offset];
@@ -176,9 +231,9 @@ namespace
     void FPCSG00410(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("#[A-Za-z]+\\[(\\d*[.])?\\d+\\]"), "");
-        s = std::regex_replace(s, std::regex("#Pos\\[[\\s\\S]*?\\]"), "");
-        s = std::regex_replace(s, std::regex("#n"), " ");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
+        s = re::sub(s, "#Pos\\[[\\s\\S]*?\\]");
+        s = re::sub(s, "#n", " ");
         // .replaceAll("④", "!?").replaceAll("②", "!!").replaceAll("⑥", "。").replaceAll("⑪", "【")
         // 	.replaceAll("⑫", "】").replaceAll("⑤", "、").replaceAll("①", "・・・")
         strReplace(s, "\x87\x43", "!?");
@@ -193,18 +248,24 @@ namespace
     void FPCSG00448(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("[\\s]"), "");
-        s = std::regex_replace(s, std::regex("(#n)+"), "");
-        s = std::regex_replace(s, std::regex("#[A-Za-z]+\\[(\\d*[.])?\\d+\\]"), "");
-        s = std::regex_replace(s, std::regex("#Pos[\\s\\S]*?\\]"), "");
+        s = re::sub(s, "[\\s]");
+        s = re::sub(s, "(#n)+");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
+        s = re::sub(s, "#Pos\\[[\\s\\S]*?\\]");
+        buffer->from(s);
+    }
+    void PCSG01203(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strA();
+        s = re::sub(s, "#Ruby\\[[-\\d]+,(.*?)\\]");
         buffer->from(s);
     }
     void FPCSG01008(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("#Ruby\\[([^,]+)\\.([^\\]]+)\\]."), "$1");
-        s = std::regex_replace(s, std::regex("(#n)+"), " ");
-        s = std::regex_replace(s, std::regex("#[A-Za-z]+\\[(\\d*[.])?\\d+\\]"), "");
+        s = re::sub(s, "#Ruby\\[([^,]+)\\.([^\\]]+)\\].", "$1");
+        s = re::sub(s, "(#n)+", " ");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
         buffer->from(s);
     }
     void TPCSG00903(hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
@@ -216,33 +277,38 @@ namespace
     {
         StringFilter(buffer, TEXTANDLEN("\\n"));
     }
+    void PCSG01144(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilter(buffer, TEXTANDLEN("\\n"));
+        StringFilter(buffer, TEXTANDLEN("\\c"));
+    }
     void FPCSG00903(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("\\\\n"), " ");
+        s = re::sub(s, "\\\\n", " ");
         buffer->from(s);
     }
     void FPCSG01180(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(\\n)"), " ");
-        s = std::regex_replace(s, std::regex(R"(,.*$)"), " ");
+        s = re::sub(s, R"(\\n)", " ");
+        s = re::sub(s, R"(,.*$)", " ");
         buffer->from(s);
     }
     void PCSG01002(TextBuffer *buffer, HookParam *hp)
     {
         CharFilter(buffer, L'\n');
         auto s = buffer->strW();
-        s = std::regex_replace(s, std::wregex(L"<.*?>"), L"");
+        s = re::sub(s, L"<.*?>");
         buffer->from(s);
     }
     void FPCSG00839(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strW();
-        s = std::regex_replace(s, std::wregex(L"\\[[^\\]]+."), L"");
-        s = std::regex_replace(s, std::wregex(L"\\\\k|\\\\x|%C|%B|%p-1;"), L"");
-        s = std::regex_replace(s, std::wregex(L"#[0-9a-fA-F]+;([^%#]+)(%r)?"), L"$1");
-        s = std::regex_replace(s, std::wregex(L"\\\\n"), L"");
+        s = re::sub(s, L"\\[[^\\]]+.");
+        s = re::sub(s, L"\\\\k|\\\\x|%C|%B|%p-1;");
+        s = re::sub(s, L"#[0-9a-fA-F]+;([^%#]+)(%r)?", L"$1");
+        s = re::sub(s, L"\\\\n");
         static std::wstring last;
         if (last.find(s) != last.npos)
             return buffer->clear();
@@ -252,18 +318,18 @@ namespace
     void FPCSG00751(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("[\\s]"), "");
-        s = std::regex_replace(s, std::regex("@[a-z]"), "");
-        // s = std::regex_replace(s, std::regex("＄"), "");
+        s = re::sub(s, "[\\s]");
+        s = re::sub(s, "@[a-z]");
+        // s = re::sub(s, "＄"), "");
         strReplace(s, "\x81\x90");
         buffer->from(s);
     }
     void FPCSG00401(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"([\s])"), "");
-        s = std::regex_replace(s, std::regex(R"(\c)"), "");
-        s = std::regex_replace(s, std::regex(R"(\\n)"), "");
+        s = re::sub(s, R"([\s])");
+        s = re::sub(s, R"(\c)");
+        s = re::sub(s, R"(\\n)");
         buffer->from(s);
     }
     void PCSG00530(TextBuffer *buffer, HookParam *)
@@ -278,7 +344,7 @@ namespace
     void PCSG00592(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(#Color\[\d+\])"), "");
+        s = re::sub(s, R"(#Color\[\d+\])");
         buffer->from(s);
     }
     void PCSG00833(TextBuffer *buffer, HookParam *)
@@ -310,6 +376,17 @@ namespace
     {
         CharFilter(buffer, '\n');
     }
+    void PCSG01034(TextBuffer *buffer, HookParam *hp)
+    {
+        CharFilter(buffer, L'\n');
+        static std::string last;
+        auto s = buffer->strA();
+        if (s == last)
+        {
+            buffer->clear();
+        }
+        last = s;
+    }
     void PCSG00502(TextBuffer *buffer, HookParam *)
     {
         CharFilter(buffer, L'\n');
@@ -339,24 +416,24 @@ namespace
     void PCSG01167(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(u8R"(<(.*?)>(.*?)\|)"), "$2");
+        s = re::sub(s, u8R"(<(.*?)>(.*?)\|)", "$2");
         buffer->from(s);
     }
     void PCSG00917(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(u8R"(([^。…？！])　)"), "$1");
-        s = std::regex_replace(s, std::regex(u8R"(^　)"), "");
-        s = std::regex_replace(s, std::regex(u8R"(#n)"), "");
+        s = re::sub(s, u8R"(([^。…？！])　)", "$1");
+        s = re::sub(s, u8R"(^　)");
+        s = re::sub(s, u8R"(#n)");
         buffer->from(s);
     }
     void PCSG00938(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(u8R"(([^。…？！])　)"), "$1");
-        s = std::regex_replace(s, std::regex(u8R"(^　)"), "");
-        s = std::regex_replace(s, std::regex(u8R"(#n)"), "");
-        s = std::regex_replace(s, std::regex(u8R"(#\w+\[\d+\]|!)"), "");
+        s = re::sub(s, u8R"(([^。…？！])　)", "$1");
+        s = re::sub(s, u8R"(^　)");
+        s = re::sub(s, u8R"(#n)");
+        s = re::sub(s, u8R"(#\w+\[\d+\]|!)");
         buffer->from(s);
     }
     void FPCSG00912(TextBuffer *buffer, HookParam *hp)
@@ -366,7 +443,7 @@ namespace
     void FPCSG00706(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strW();
-        s = std::regex_replace(s, std::wregex(L"<br>"), L"");
+        s = re::sub(s, L"<br>");
         buffer->from(s);
     }
     void FPCSG00696(TextBuffer *buffer, HookParam *hp)
@@ -384,51 +461,51 @@ namespace
         strReplace(s, "\x81\x55", "!?");
         strReplace(s, "\x81\x54", "!!");
         strReplace(s, "\x81\x40");
-        s = std::regex_replace(s, std::regex("(#n)+"), "");
-        s = std::regex_replace(s, std::regex("#[A-Za-z]+\\[(\\d*[.])?\\d+\\]"), "");
+        s = re::sub(s, "(#n)+");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
         buffer->from(s);
     }
     void FPCSG00389(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("[\\s]"), "");
-        s = std::regex_replace(s, std::regex("(#n)+"), "");
-        s = std::regex_replace(s, std::regex("#[A-Za-z]+\\[(\\d*[.])?\\d+\\]"), "");
-        s = std::regex_replace(s, std::regex("#Pos\\[[\\s\\S]*?\\]"), "");
+        s = re::sub(s, "[\\s]");
+        s = re::sub(s, "(#n)+");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
+        s = re::sub(s, "#Pos\\[[\\s\\S]*?\\]");
         buffer->from(s);
     }
     void FPCSG00216(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("[\\s]"), "");
-        s = std::regex_replace(s, std::regex("(#n)+"), "");
-        s = std::regex_replace(s, std::regex("#[A-Za-z]+\\[(\\d*[.])?\\d+\\]"), "");
-        s = std::regex_replace(s, std::regex("#Pos\\[[\\s\\S]*?\\]"), "");
+        s = re::sub(s, "[\\s]");
+        s = re::sub(s, "(#n)+");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
+        s = re::sub(s, "#Pos\\[[\\s\\S]*?\\]");
         buffer->from(s);
     }
     void FPCSG00405(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex("[\\s]"), "");
+        s = re::sub(s, "[\\s]");
         buffer->from(s);
     }
     void PCSG00172(TextBuffer *buffer, HookParam *hp)
     {
         auto ws = StringToWideString(buffer->viewA(), 932).value();
-        strReplace(ws, L"Mﾚ      　ｰ_Mﾚ  ���", L"");
-        strReplace(ws, L"u_", L"");
-        strReplace(ws, L"ata/data4.dat", L"");
-        strReplace(ws, L":data/data4.dat", L"");
-        strReplace(ws, L"@", L"");
-        strReplace(ws, L"�", L"");
-        strReplace(ws, L"∥pp0:d", L"");
-        strReplace(ws, L"app0:d:d", L"");
+        strReplace(ws, L"Mﾚ      　ｰ_Mﾚ  ���");
+        strReplace(ws, L"u_");
+        strReplace(ws, L"ata/data4.dat");
+        strReplace(ws, L":data/data4.dat");
+        strReplace(ws, L"@");
+        strReplace(ws, L"�");
+        strReplace(ws, L"∥pp0:d");
+        strReplace(ws, L"app0:d:d");
         buffer->from(WideStringToString(ws, 932));
     }
     void PCSG00776(TextBuffer *buffer, HookParam *hp)
     {
         auto ws = StringToWideString(buffer->viewA(), 932).value();
-        strReplace(ws, L"\x02", L"");
+        strReplace(ws, L"\x02");
         Trim(ws);
         buffer->from(WideStringToString(ws, 932));
     }
@@ -635,25 +712,25 @@ namespace
     void FPCSG00468(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(u8R"(\\n(　)*|\\k)"), "");
-        s = std::regex_replace(s, std::regex(R"(\[|\*[^\]]+])"), "");
-        s = std::regex_replace(s, std::regex(u8"×"), "");
+        s = re::sub(s, u8R"(\\n(　)*|\\k)");
+        s = re::sub(s, R"(\[|\*[^\]]+])");
+        s = re::sub(s, u8"×");
         buffer->from(s);
     }
     void FPCSG00808(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(^\s+|\s+$)"), "");
-        s = std::regex_replace(s, std::regex(R"(\s*(#n)*\s*)"), "");
-        s = std::regex_replace(s, std::regex(R"(#\w+(\[.+?\])?)"), "");
+        s = re::sub(s, R"(^\s+|\s+$)");
+        s = re::sub(s, R"(\s*(#n)*\s*)");
+        s = re::sub(s, R"(#\w+(\[.+?\])?)");
         buffer->from(s);
     }
     void F010088B01A8FC000(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
         static std::string last;
-        s = std::regex_replace(s, std::regex(R"(#\w+(\[.+?\])?)"), "");
-        s = std::regex_replace(s, std::regex(u8"　"), "");
+        s = re::sub(s, R"(#\w+(\[.+?\])?)");
+        s = re::sub(s, u8"　");
         if (last == s)
             return buffer->clear();
         last = s;
@@ -672,8 +749,8 @@ namespace
     void FPCSG00815(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(\s*(#n)*\s*)"), "");
-        s = std::regex_replace(s, std::regex(R"(#\w+(\[.+?\])?)"), "");
+        s = re::sub(s, R"(\s*(#n)*\s*)");
+        s = re::sub(s, R"(#\w+(\[.+?\])?)");
         buffer->from(s);
     }
     void PCSG01250_T(TextBuffer *buffer, HookParam *hp)
@@ -682,8 +759,8 @@ namespace
         if (!startWith(s, "<text"))
             return buffer->clear();
         s = s.substr(6, s.size() - 6 - 1);
-        s = std::regex_replace(s, std::regex(R"(/ruby:(.*?)&(.*?)/)"), "$1");
-        s = std::regex_replace(s, std::regex(R"(#n)"), "");
+        s = re::sub(s, R"(/ruby:(.*?)&(.*?)/)", "$1");
+        s = re::sub(s, R"(#n)");
         buffer->from(s);
     }
     template <int ex = 1>
@@ -698,21 +775,38 @@ namespace
     void PCSG01202(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(/ruby:(.*?)&(.*?)/)"), "$1");
+        s = re::sub(s, R"(/ruby:(.*?)&(.*?)/)", "$1");
         buffer->from(s);
     }
     void PCSG01325(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(u8R"(@[_\*\d\w]*)"), "");
+        s = re::sub(s, u8R"(@[_\*\d\w]*)");
         buffer->from(s);
+    }
+    void PCSG00431(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilter(buffer, TEXTANDLEN("#n\x81\x40"));
+        StringFilter(buffer, TEXTANDLEN("#n"));
+        static std::string last;
+        auto s = buffer->strA();
+        if (startWith(s, last))
+        {
+            buffer->from(s.substr(last.size()));
+        }
+        last = s;
     }
     void FPCSG00855(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(u8R"(#n(　)*)"), "");
-        s = std::regex_replace(s, std::regex(R"(#\w.+?\])"), "");
+        s = re::sub(s, u8R"(#n(　)*)");
+        s = re::sub(s, R"(#\w.+?\])");
         buffer->from(s);
+    }
+    void PCSG01178(TextBuffer *buffer, HookParam *hp)
+    {
+        FPCSG00855(buffer, hp);
+        StringFilter(buffer, TEXTANDLEN("  "));
     }
     void FPCSG00855_2_1(TextBuffer *buffer, HookParam *hp)
     {
@@ -743,15 +837,22 @@ namespace
     }
     void FPCSG00477(TextBuffer *buffer, HookParam *hp)
     {
-        auto ws = StringToWideString(buffer->viewA(), 932).value();
-        ws = std::regex_replace(ws, std::wregex(LR"(#n\u3000*)"), L"");
-        ws = std::regex_replace(ws, std::wregex(LR"(#\w.+?\])"), L"");
-        buffer->from(WideStringToString(ws, 932));
+        auto s = buffer->strA();
+        s = re::sub(s, R"(#n(\x81\x40)*)");
+        s = re::sub(s, R"(#\w.+?\])");
+        buffer->from(s);
+    }
+    void PCSG00654(TextBuffer *buffer, HookParam *hp)
+    {
+        auto ws = StringToWideString(buffer->viewA());
+        strReplace(ws, L"\\");
+        strReplace(ws, L"$");
+        buffer->from(WideStringToString(ws));
     }
     void FPCSG00852(TextBuffer *buffer, HookParam *hp)
     {
         auto ws = StringToWideString(buffer->viewA(), 932).value();
-        strReplace(ws, L"^", L"");
+        strReplace(ws, L"^");
         buffer->from(WideStringToString(ws, 932));
     }
     void PCSG00829(TextBuffer *buffer, HookParam *hp)
@@ -761,9 +862,9 @@ namespace
         if (last == s)
             return buffer->clear();
         last = s;
-        strReplace(s, L"\\n　", L"");
-        strReplace(s, L"\\n", L"");
-        s = std::regex_replace(s, std::wregex(LR"(\[(.*?),\d\])"), L"");
+        strReplace(s, L"\\n　");
+        strReplace(s, L"\\n");
+        s = re::sub(s, LR"(\[(.*?),\d\])");
         buffer->from(s);
     }
     template <int __>
@@ -829,8 +930,8 @@ namespace
             return result;
         };
         ws = remap(ws);
-        ws = std::regex_replace(ws, std::wregex(LR"(\$t(.*?)@)"), L"$1");
-        ws = std::regex_replace(ws, std::wregex(LR"(\$\[(.*?)\$/(.*?)\$\])"), L"$1");
+        ws = re::sub(ws, LR"(\$t(.*?)@)", L"$1");
+        ws = re::sub(ws, LR"(\$\[(.*?)\$/(.*?)\$\])", L"$1");
         buffer->from(WideStringToString(ws, 932));
     }
     void PCSG01198(TextBuffer *buffer, HookParam *hp)
@@ -850,8 +951,8 @@ namespace
             return result;
         };
         ws = remap(ws);
-        ws = std::regex_replace(ws, std::wregex(LR"(`(.*?)@)"), L"$1");
-        ws = std::regex_replace(ws, std::wregex(LR"(\$\[(.*?)\$/(.*?)\$\])"), L"$1");
+        ws = re::sub(ws, LR"(`(.*?)@)", L"$1");
+        ws = re::sub(ws, LR"(\$\[(.*?)\$/(.*?)\$\])", L"$1");
         buffer->from(WideStringToString(ws, 932));
     }
     void PCSG00585(TextBuffer *buffer, HookParam *hp)
@@ -871,9 +972,9 @@ namespace
             return result;
         };
         ws = remap(ws);
-        ws = std::regex_replace(ws, std::wregex(LR"(\$\[(.*?)\$/(.*?)\$\])"), L"$1");
-        ws = std::regex_replace(ws, std::wregex(LR"(\$C\[ffffff\](.*?)@\$C\[\])"), L"$1");
-        strReplace(ws, L"\n", L"");
+        ws = re::sub(ws, LR"(\$\[(.*?)\$/(.*?)\$\])", L"$1");
+        ws = re::sub(ws, LR"(\$C\[ffffff\](.*?)@\$C\[\])", L"$1");
+        strReplace(ws, L"\n");
         buffer->from(WideStringToString(ws, 932));
     }
     void PCSG01254(TextBuffer *buffer, HookParam *hp)
@@ -893,27 +994,27 @@ namespace
             return result;
         };
         ws = remap(ws);
-        strReplace(ws, L"@r", L"");
+        ws = re::sub(ws, LR"(@[a-zA-Z\d_\.]+)"); // 操了，wregex \w会匹配到unicode字符
         buffer->from(WideStringToString(ws, 932));
     }
     void PCSG01196(TextBuffer *buffer, HookParam *hp)
     {
         auto ws = StringToWideString(buffer->viewA(), 932).value();
         strReplace(ws, L"^", L"\n");
-        ws = std::regex_replace(ws, std::wregex(LR"(<(.*?)>(.*?)|)"), L"$2");
+        ws = re::sub(ws, LR"(<(.*?)>(.*?)|)", L"$2");
         buffer->from(WideStringToString(ws, 932));
     }
     void PCSG01151(TextBuffer *buffer, HookParam *hp)
     {
         auto ws = StringToWideString(buffer->viewA(), 932).value();
-        strReplace(ws, L"^", L"");
-        strReplace(ws, L"　", L"");
+        strReplace(ws, L"^");
+        strReplace(ws, L"　");
         buffer->from(WideStringToString(ws, 932));
     }
     void FPCSG01066(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(u8R"(\n(　)*)"), "");
+        s = re::sub(s, u8R"(\n(　)*)");
         buffer->from(s);
     }
     void FPCSG01075(TextBuffer *buffer, HookParam *hp)
@@ -928,31 +1029,66 @@ namespace
     void PCSG01314(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(@r(.*?)@(.*?)@)"), "$1");
-        s = std::regex_replace(s, std::regex(R"(@\w)"), "");
+        s = re::sub(s, R"(@r(.*?)@(.*?)@)", "$1");
+        s = re::sub(s, R"(@[\w\d_]+)");
         buffer->from(s);
     }
     void F010052300F612000(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(#r(.*?)\|(.*?)#)"), "$1");
-        s = std::regex_replace(s, std::regex(R"(@r(.*?)@\d)"), "$1");
+        s = re::sub(s, R"(#r(.*?)\|(.*?)#)", "$1");
+        s = re::sub(s, R"(@r(.*?)@\d)", "$1");
         strReplace(s, R"(\c)");
         strReplace(s, R"(\n)");
         buffer->from(s);
     }
+    void PCSG01144_1(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilter(buffer, TEXTANDLEN("@w"));
+        StringFilter(buffer, TEXTANDLEN("@y"));
+        StringFilter(buffer, TEXTANDLEN("\x81\x40"));
+        auto s = buffer->strA();
+        if (!startWith(s, "\x81\x79"))
+            buffer->clear();
+    }
+    void PCSG00449(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilter(buffer, TEXTANDLEN("@w"));
+        StringFilter(buffer, TEXTANDLEN("\x81\x40"));
+        auto s = buffer->strA();
+        if (!startWith(s, "\x81\x79"))
+            buffer->clear();
+        if (endWith(s, "@"))
+            buffer->from(s.substr(0, s.size() - 1));
+    }
     void PCSG01197(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
-        s = std::regex_replace(s, std::regex(R"(#r(.*?)\|(.*?)#)"), "$1");
+        s = re::sub(s, R"(#r(.*?)\|(.*?)#)", "$1");
         strReplace(s, R"(@w)");
+        buffer->from(s);
+    }
+    void PCSG01152(TextBuffer *buffer, HookParam *hp)
+    {
+        static int idx = 0;
+        if (idx++ % 2 == 1)
+            return buffer->clear();
+        auto s = buffer->strW();
+        if (startWith(s, L"<"))
+            return buffer->clear();
+        if (startWith(s, L"＠"))
+        {
+            if (s.size() == 1)
+                return buffer->clear();
+            s = L"【" + s.substr(1) + L"】";
+        }
         buffer->from(s);
     }
     void PCSG00433(TextBuffer *buffer, HookParam *hp)
     {
         CharFilter(buffer, L'\n');
         auto s = buffer->strW();
-        s = std::regex_replace(s, std::wregex(LR"(<CLT \d+>(.*?)<CLT>)"), L"$1");
+        s = re::sub(s, LR"(<CLT \d+>(.*?)<CLT>)", L"$1");
         buffer->from(s);
     }
     auto _ = []()
@@ -1084,8 +1220,11 @@ namespace
             {0x8007443E, {0, 0, 0, 0, 0, "PCSG00910"}},
             // DIABOLIK LOVERS LUNATIC PARADE
             {0x800579EE, {0, 0, 0, 0, PCSG00826, "PCSG00826"}},
-            // NORN9 ACT TUNE
+            // Norn9 ~Norn + Nonette~ Act Tune
             {0x8001E288, {CODEC_UTF8, 0, 0, 0, PCSG00833, "PCSG00833"}},
+            // NORN9 VAR COMMONS
+            {0x80019DFA, {0, 4, 0, 0, PCSG00431, "PCSG00431"}},
+            {0x800338AA, {0, 0XD, 0, 0, FPCSG00855, "PCSG00431"}},
             // 空蝉の廻
             {0x82535242, {CODEC_UTF16 | USING_CHAR | DATA_INDIRECT, 1, 0, 0, 0, "PCSG01011"}}, // 后缀有人名，需要额外过滤
             {0x801AE35A, {CODEC_UTF8, 7, 0, PCSG01011, 0, "PCSG01011"}},
@@ -1177,6 +1316,10 @@ namespace
             {0x81078B22, {CODEC_UTF16, 1, 0, 0, PCSG00451<0>, "PCSG00451"}},
             // sweet pool
             {0x8003D5B6, {0, 0, 0, 0, PCSG01196, "PCSG01196"}},
+            // 学園CLUB ～ヒミツのナイトクラブ～
+            {0x80029854, {0, 1, 0, 0, FPCSG00852, "PCSG01065"}},
+            // 学園K -Wonderful School Days- V  Edition
+            {0x80059946, {CODEC_UTF8, 5, 0, 0, PCSG00654, "PCSG00654"}},
             // 学園ヘヴン BOY'S LOVE SCRAMBLE!
             {0x80060E58, {0, 2, 0, 0, PCSG00535_1, "PCSG00535"}},
             {0x80083A94, {0, 2, 0, 0, PCSG00535_2, "PCSG00535"}},
@@ -1250,10 +1393,10 @@ namespace
             // フルキス
             {0x801B28C8, {CODEC_UTF8, 5, 0, 0, PCSG01260, "PCSG01260"}},
             {0x801B1FC0, {CODEC_UTF8, 0, 0, 0, PCSG01260_T, "PCSG01260"}},
+            // アオナツライン
+            {0x8031E464, {CODEC_UTF8, 5, 0, 0, PCSG01314, "PCSG01283"}},
             // 軍靴をはいた猫
             {0x800647D0, {0, 1, 0, 0, PCSG01289, "PCSG01289"}},
-            // 学園CLUB ～ヒミツのナイトクラブ～
-            {0x80029854, {0, 1, 0, 0, FPCSG00852, "PCSG01065"}},
             // グリザイア ファントムトリガー ０３＆０４
             {0x80052EFE, {0, 4, 0, 0, PCSG01289, "PCSG01218"}},
             // かりぐらし恋愛
@@ -1278,6 +1421,51 @@ namespace
             {0x800E954E, {CODEC_UTF16, 0, 0, 0, PCSG00502, "PCSG00502"}},
             // 終わりのセラフ　運命の始まり
             {0x8028394A, {CODEC_UTF8, 4, 0, 0, PCSG00787, "PCSG00728"}},
+            // Dance with Devils My Carol
+            {0x82303AB0, {CODEC_UTF16, 0, 0, 0, PCSG01152, "PCSG01152"}}, // 会超前读取
+            // ひめひび　-Princess Days-
+            {0x80C5A6EA, {0, 4, 0, 0, PCSG01144_1, "PCSG01092"}},
+            {0x80020EA0, {0, 1, 0, 0, PCSG01144, "PCSG01092"}},
+            // ひめひび 続！二学期-New Princess Days!!-
+            {0x815F96EA, {0, 4, 0, 0, PCSG01144_1, "PCSG01144"}},
+            {0x8000D3C2, {0, 8, 0, 0, PCSG01144, "PCSG01144"}},
+            // カエル畑 ＤＥ つかまえて・夏　千木良参戦！
+            {0x80014488, {0, 6, 0, 0, PCSG01144_1, "PCSG00534"}},
+            {0x80011E7A, {0, 0, 0, 0, 0, "PCSG00534"}},
+            // カレイドイヴ
+            {0x80018748, {0, 0, 0, 0, FPCSG00852, "PCSG00520"}},
+            // 神々の悪戯 InFinite
+            {0x8009730e, {0, 0, 0x20, PCSG00595, 0, "PCSG00595"}},
+            // 神さまと恋ゴコロ
+            {0x8000E47A, {0, 0, 0, 0, PCSG01144, "PCSG00449"}},
+            {0x80015842, {0, 1, 0, 0, PCSG00449, "PCSG00449"}},
+            // キミの瞳にヒットミー
+            {0x8006080E, {0, 0, 0, 0, PCSG01254, "PCSG01087"}},
+            // 古書店街の橋姫 々
+            {0x8000C74A, {0, 0, 0, 0, 0, "PCSG01213"}},
+            // ナデレボ！
+            {0x80043D1A, {0, 0, 0, 0, PCSG01178, "PCSG01178"}},
+            // 猛獣たちとお姫様 ～in blossom～
+            {0x8001DD9E, {CODEC_UTF8, 0, 0, 0, 0, "PCSG01096"}},
+            // クロガネ回姫譚 －閃夜一夜－
+            {0x8003979C, {0, 0, 0, 0, PCSG01249, "PCSG00417"}},
+            // スクール・ウォーズ～全巻パック　本編＆卒業戦線～ //PCSG00574
+            // ロミオVSジュリエット 全巻パック //PCSG00618
+            // スクール・ウォーズ～全巻パック　本編＆卒業戦線～ //PCSG00574
+            {0x80017628, {CODEC_UTF8, 1, 0, 0, 0, std::vector<const char *>{"PCSG00574", "PCSG00618", "PCSG00574"}}},
+            // 猛獣使いと王子様 ～Flower ＆ Snow～
+            {0x80071E3C, {CODEC_UTF8, 0, 0, 0, FPCSG00855, "PCSG00604"}},
+            {0x80080BAA, {CODEC_UTF8, 7, 0, 0, FPCSG00855, "PCSG00604"}},
+            // 新装版お菓子な島のピーターパン～Sweet Never Land～
+            {0x80027140, {CODEC_UTF8, 1, 0, 0, 0, "PCSG00526"}},
+            // タユタマ２ -you're the only one-
+            {0x8004C0CA, {0, 0, 0, 0, PCSG01203, "PCSG01203"}},
+            // 戦極姫７～戦雲つらぬく紅蓮の遺志～
+            {0x8276B2CE, {CODEC_UTF16, 0x9, 0, 0, PCSG01034, "PCSG01034"}},
+            // 新装版クリムゾン・エンパイア
+            {0x800125AE, {CODEC_UTF8, 1, 0, 0, PCSG00787, "PCSG00481"}},
+            // うたの☆プリンスさまっ♪Amazing Aria & Sweet Serenade LOVE
+            {0x80052B34, {0, 0, 0x24, PCSG00595, 0, "PCSG01081"}},
         };
         return 1;
     }();
