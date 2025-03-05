@@ -17,7 +17,7 @@ jobs:
         with:
           sdk-version: 22621
       - run: python src/scripts/build_lunahook.py build winxp
-      - run: python src/scripts/packlunahook.py
+  #   - run: python src/scripts/packlunahook.py
 
       - uses: actions/upload-artifact@v4
         with:
