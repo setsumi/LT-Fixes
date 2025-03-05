@@ -18,11 +18,11 @@ if len(sys.argv) and sys.argv[1] == "merge":
     )
     shutil.copytree(
         f"build/winxp/Release_winxp",
-        f"../build/Release",
+        f"../build/Release_winxp",
         dirs_exist_ok=True,
     )
 
-    targetdir = f"../build/Release"
+    targetdir = f"../build"
     target = f"builds/Release.zip"
     os.system(
         rf'"C:\Program Files\7-Zip\7z.exe" a -m0=Deflate -mx9 {target} {targetdir}'
