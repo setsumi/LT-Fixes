@@ -8,6 +8,8 @@ std::unordered_map<uint64_t, std::pair<JITTYPE, std::set<uintptr_t>>> emuaddr2ji
 std::unordered_map<uint64_t, std::pair<JITTYPE, uintptr_t>> emuaddr2jitaddr;
 #endif
 std::unordered_map<uintptr_t, std::pair<JITTYPE, uint64_t>> jitaddr2emuaddr;
+std::vector<HookParam> JIT_HP_Records;
+std::mutex JIT_HP_Records_lock;
 HMODULE hLUNAHOOKDLL;
 WinMutex viewMutex;
 CommonSharedMem *commonsharedmem;
@@ -102,7 +104,7 @@ DWORD WINAPI Pipe(LPVOID)
 	}
 	else
 	{
-
+		isDetachClear = true;
 		MH_Uninitialize();
 		for (auto &hook : *hooks)
 			hook.Clear();
@@ -219,16 +221,22 @@ int HookStrLen(HookParam *hp, BYTE *data)
 	if (hp->type & CODEC_UTF16)
 		return wcsnlen((wchar_t *)data, TEXT_BUFFER_SIZE) * 2;
 	else if (hp->type & CODEC_UTF32)
-		return strlenEx((uint32_t *)data) * 4;
+		return strlenEx((char32_t *)data) * 4;
 	else
 		return strnlen((char *)data, TEXT_BUFFER_SIZE);
 }
 static std::mutex maplock;
 void jitaddrclear()
 {
-	std::lock_guard _(maplock);
-	emuaddr2jitaddr.clear();
-	jitaddr2emuaddr.clear();
+	{
+		std::lock_guard _(maplock);
+		emuaddr2jitaddr.clear();
+		jitaddr2emuaddr.clear();
+	}
+	{
+		std::lock_guard __(JIT_HP_Records_lock);
+		JIT_HP_Records.clear();
+	}
 }
 void jitaddraddr(uint64_t em_addr, uintptr_t jitaddr, JITTYPE jittype)
 {
@@ -244,9 +252,6 @@ void jitaddraddr(uint64_t em_addr, uintptr_t jitaddr, JITTYPE jittype)
 }
 bool NewHook_1(HookParam &hp, LPCSTR lpname)
 {
-	if (hp.emu_addr)
-		ConsoleOutput("%p => %p", hp.emu_addr, hp.address);
-
 	if (++currentHook >= MAX_HOOK)
 	{
 		ConsoleOutput(TR[TOO_MANY_HOOKS]);
@@ -264,6 +269,12 @@ bool NewHook_1(HookParam &hp, LPCSTR lpname)
 	}
 	else
 	{
+		if (hp.emu_addr)
+		{
+			ConsoleOutput("%p => %p", hp.emu_addr, hp.address);
+			std::lock_guard __(JIT_HP_Records_lock);
+			JIT_HP_Records.push_back(hp);
+		}
 		NotifyHookInserting(hp.address, hp.hookcode);
 		return true;
 	}

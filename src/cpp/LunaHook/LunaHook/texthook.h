@@ -1,6 +1,7 @@
 #pragma once
 
 inline std::atomic<bool (*)(LPVOID addr, hook_context *context)> trigger_fun = nullptr;
+inline bool isDetachClear = false;
 
 class TextHook
 {
