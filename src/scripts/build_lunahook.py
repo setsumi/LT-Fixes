@@ -23,7 +23,7 @@ if len(sys.argv) and sys.argv[1] == "merge":
     )
 
     targetdir = f"../build/*"
-    target = f"builds/Release.zip"
+    target = f"builds/LunaHook.zip"
     os.system(
         rf'"C:\Program Files\7-Zip\7z.exe" a -m0=Deflate -mx9 {target} {targetdir}'
     )
