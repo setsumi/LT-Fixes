@@ -188,7 +188,8 @@ enum class JITTYPE
 	PPSSPP,
 	VITA3K,
 	RPCS3,
-	UNITY
+	UNITY,
+	PCSX2,
 };
 struct TextBuffer;
 struct HookParam
@@ -376,6 +377,14 @@ struct TextBuffer
 	std::wstring strW()
 	{
 		return std::wstring((wchar_t *)buff, size / 2);
+	}
+	std::wstring strAW(UINT cp = 932)
+	{
+		return StringToWideString(viewA(), cp).value();
+	}
+	void fromWA(const std::wstring &ws, UINT cp = 932)
+	{
+		from(WideStringToString(ws, cp));
 	}
 	void clear()
 	{
