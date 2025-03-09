@@ -220,11 +220,11 @@ namespace
     {
         hp1->text_fun = nullptr;
         hp1->type |= HOOK_EMPTY;
-        auto address = VITA3K::emu_arg(context)[0] + hp1->padding;
-        buffer->from((char *)address);
         HookParam hp;
-        hp.address = address;
+        hp.emu_addr = VITA3K::emu_arg(context).value(0) + hp1->padding;
+        hp.address = VITA3K::emu_addr(context, hp.emu_addr);
         hp.type = DIRECT_READ;
+        hp.jittype = JITTYPE ::VITA3K;
         hp.text_fun = [](hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
         {
             static std::string last;
@@ -247,7 +247,7 @@ namespace
                 buffer->from(collect);
             last = collect;
         };
-        static auto _ = NewHook(hp, hp1->name);
+        NewHook(hp, hp1->name);
     }
     void ReadU16TextAndLenDW(hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
     {
@@ -489,25 +489,26 @@ namespace
         strReplace(s, "\x81\x54", "!!");
         strReplace(s, "\x81\x40");
         s = re::sub(s, "(#n)+");
-        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.,])?\\d+\\]");
         buffer->from(s);
+    }
+    void PCSG00272(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strA();
+        if ((!startWith(s, "#n#")) && (s.find("#n#") != s.npos))
+        {
+            strReplace(s, "#n#", "\x81\x7a#");
+            s = "\x81\x79" + s;
+        }
+        buffer->from(s);
+        PCSG00472(buffer, hp);
     }
     void FPCSG00389(TextBuffer *buffer, HookParam *hp)
     {
         auto s = buffer->strA();
         s = re::sub(s, "[\\s]");
         s = re::sub(s, "(#n)+");
-        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
-        s = re::sub(s, "#Pos\\[[\\s\\S]*?\\]");
-        buffer->from(s);
-    }
-    void FPCSG00216(TextBuffer *buffer, HookParam *hp)
-    {
-        auto s = buffer->strA();
-        s = re::sub(s, "[\\s]");
-        s = re::sub(s, "(#n)+");
-        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.])?\\d+\\]");
-        s = re::sub(s, "#Pos\\[[\\s\\S]*?\\]");
+        s = re::sub(s, "#[A-Za-z]+\\[(\\d*[.,])?\\d+\\]");
         buffer->from(s);
     }
     void FPCSG00405(TextBuffer *buffer, HookParam *hp)
@@ -1195,6 +1196,9 @@ namespace
             {0x8007443E, {0, 0, 0, 0, 0, "PCSG00910"}},
             // DIABOLIK LOVERS LUNATIC PARADE
             {0x800579EE, {0, 0, 0, 0, PCSG00826, "PCSG00826"}},
+            // DIABOLIK LOVERS LIMITED V EDITION
+            {0x8105A176, {0, 5, 0, 0, PCSG00472, "PCSG00272"}}, // prologue+text
+            {0x8103416C, {0, 0, 0, 0, PCSG00272, "PCSG00272"}}, // name+text
             // Norn9 ~Norn + Nonette~ Act Tune
             {0x8001E288, {CODEC_UTF8, 0, 0, 0, PCSG00833, "PCSG00833"}},
             // NORN9 VAR COMMONS

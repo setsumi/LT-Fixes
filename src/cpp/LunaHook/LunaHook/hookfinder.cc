@@ -663,10 +663,10 @@ void SearchForText(wchar_t *text, UINT codepage)
 	if (codepage != CP_UTF8)
 		WideCharToMultiByte(codepage, 0, text, PATTERN_SIZE, codepageText, PATTERN_SIZE * 4, nullptr, nullptr);
 
-	if (strlen(utf8Text) < 4 || ((codepage != CP_UTF8) && (strlen(codepageText) < 4)) || wcslen(text) < 4)
+	if (strlen(utf8Text) < 4 || ((codepage != CP_UTF8) && (strlen(codepageText) < 4)) || wcslen(text) < 3)
 		return ConsoleOutput(TR[NOT_ENOUGH_TEXT]);
 	ConsoleOutput(TR[HOOK_SEARCH_STARTING]);
-	auto GenerateHooks = [&](std::vector<uintptr_t> addresses, HookParamType type)
+	auto GenerateHooks = [&](uintptr_t minaddr, std::vector<uintptr_t> addresses, HookParamType type)
 	{
 		for (auto addr : addresses)
 		{
@@ -677,13 +677,25 @@ void SearchForText(wchar_t *text, UINT codepage)
 			hp.type = DIRECT_READ | type;
 			hp.address = addr;
 			hp.codepage = codepage;
+			if (jittypedefault == JITTYPE::PCSX2)
+			{
+				hp.emu_addr = addr - minaddr;
+				hp.jittype = JITTYPE::PCSX2;
+			}
 			NewHook(hp, "Search");
 		}
 	};
-	GenerateHooks(Util::SearchMemory(utf8Text, strlen(utf8Text), PAGE_READWRITE), CODEC_UTF8);
+	uintptr_t minaddr = 0;
+#ifdef _WIN64
+	if ((jittypedefault == JITTYPE::PCSX2))
+	{
+		minaddr = (uintptr_t)PCSX2Types::eeMem->Main;
+	}
+#endif
+	GenerateHooks(minaddr, Util::SearchMemory(utf8Text, strlen(utf8Text), PAGE_READWRITE, minaddr), CODEC_UTF8);
 	if (codepage != CP_UTF8)
-		GenerateHooks(Util::SearchMemory(codepageText, strlen(codepageText), PAGE_READWRITE), USING_STRING);
-	GenerateHooks(Util::SearchMemory(text, wcslen(text) * sizeof(wchar_t), PAGE_READWRITE), CODEC_UTF16);
+		GenerateHooks(minaddr, Util::SearchMemory(codepageText, strlen(codepageText), PAGE_READWRITE, minaddr), USING_STRING);
+	GenerateHooks(minaddr, Util::SearchMemory(text, wcslen(text) * sizeof(wchar_t), PAGE_READWRITE, minaddr), CODEC_UTF16);
 	if (!found)
 		ConsoleOutput(TR[COULD_NOT_FIND]);
 }

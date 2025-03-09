@@ -295,10 +295,13 @@ namespace PCSX2Types
     // alignas(16) extern cpuRegistersPack _cpuRegistersPack;
     inline cpuRegistersPack *_cpuRegistersPack = nullptr;
     inline EEVM_MemoryAllocMess *eeMem = nullptr;
-
+    inline uintptr_t emu_addr(uint32_t addr)
+    {
+        return (uintptr_t)eeMem->Main + addr;
+    }
     inline uintptr_t argsof(int idx)
     {
-        return (uintptr_t)eeMem->Main + ((DWORD *)(&_cpuRegistersPack->cpuRegs.GPR.r[idx].UQ))[0];
+        return emu_addr(((DWORD *)(&_cpuRegistersPack->cpuRegs.GPR.r[idx].UQ))[0]);
     }
 }
 #define PCSX2_REG_OFFSET(reg) (offsetof(__named_regs__, reg) / sizeof(GPR_reg))
@@ -329,20 +332,24 @@ namespace YUZU
 
     public:
         emu_arg(hook_context *context, uint64_t em_addr = 0) : context(context), is64(em_addr == 0 || em_addr > 0x80004000) {};
-        uintptr_t operator[](int idx)
+        uintptr_t value(int idx)
         {
-            auto base = context->r13;
             if (is64)
             {
                 auto args = (uintptr_t *)context->r15;
-                return base + args[idx];
+                return args[idx];
             }
             else
             {
                 // 0x204000
                 auto args = (DWORD *)context->r15;
-                return base + args[idx];
+                return args[idx];
             }
+        }
+        uintptr_t operator[](int idx)
+        {
+            auto base = context->r13;
+            return base + value(idx);
         }
     };
 }
@@ -371,10 +378,14 @@ namespace VITA3K
 
     public:
         emu_arg(hook_context *context) : context(context) {};
-        uintptr_t operator[](int idx)
+        uintptr_t value(int idx)
         {
             auto args = (uint32_t *)context->r15;
-            return emu_addr(context, args[idx]);
+            return args[idx];
+        }
+        uintptr_t operator[](int idx)
+        {
+            return emu_addr(context, value(idx));
         }
     };
 }

@@ -46,7 +46,12 @@ namespace ppsspp
 		strReplace(result, "cr");
 		buffer->from(result);
 	}
-	void ULJS00403_filter(TextBuffer *buffer, HookParam *hp)
+	void ULJM05659(TextBuffer *buffer, HookParam *hp)
+	{
+		if (buffer->buff[buffer->size - 1] == ',')
+			buffer->size -= 1;
+	}
+	void ULJS00403(TextBuffer *buffer, HookParam *hp)
 	{
 		std::string result = buffer->strA();
 		result = re::sub(result, R"((\\n)+)");
@@ -1176,14 +1181,19 @@ namespace ppsspp
 #pragma optimize("", off)
 		void ULJM06115_C(const char *_) {}
 #pragma optimize("", on)
-		void ULJM06115(TextBuffer *buffer, HookParam *)
+		void ULJM06115(TextBuffer *buffer, HookParam *hpx)
 		{
 			auto s = buffer->strA();
-			HookParam hp;
-			hp.address = (uintptr_t)ULJM06115_C;
-			hp.offset = GETARG(1);
-			hp.type = USING_STRING;
-			static auto _ = NewHook(hp, "ULJM06115");
+
+			if (!hpx->user_value)
+			{
+				hpx->user_value = 1;
+				HookParam hp;
+				hp.address = (uintptr_t)ULJM06115_C;
+				hp.offset = GETARG(1);
+				hp.type = USING_STRING;
+				NewHook(hp, "ULJM06115");
+			}
 			ULJM06115_C(s.data());
 			buffer->clear();
 		}
@@ -1466,7 +1476,7 @@ namespace ppsspp
 		// 流行り神３
 		{0x885CB50, {0, 3, 0, 0, 0, "ULJS00204"}},
 		// 死神と少女
-		{0x883bf34, {0, 1, 0, 0, ULJS00403_filter, "ULJS00403"}},
+		{0x883bf34, {0, 1, 0, 0, ULJS00403, "ULJS00403"}},
 		// アマガミ
 		{0x0886775c, {0, 0, 0, ULJS00339, 0, "ULJS00339"}}, // String.length()
 		// 世界でいちばんNG（だめ）な恋
@@ -2106,5 +2116,7 @@ namespace ppsspp
 		{0x889CBC8, {0, 1, 0, 0, ULJM06129, "ULJM05986"}},
 		// MISSINGPARTS the TANTEI stories Complete
 		{0x883F9F4, {0, 1, 0, TNPJH50689, NPJH50689, "NPJH50689"}},
+		// Canvas3 ～七色の奇跡～
+		{0x886000C, {0, 0, 0, 0, ULJM05659, "ULJM05659"}},
 	};
 }

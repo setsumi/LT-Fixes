@@ -356,6 +356,8 @@ namespace
         hp1->type |= HOOK_EMPTY;
         HookParam hp;
         hp.address = YUZU::emu_arg(context)[0xb];
+        hp.emu_addr = YUZU::emu_arg(context).value(0xb);
+        hp.jittype = JITTYPE::YUZU;
         hp.type = DIRECT_READ;
         hp.filter_fun = [](TextBuffer *buffer, HookParam *hp)
         {
@@ -370,7 +372,7 @@ namespace
             }
             last = s;
         };
-        static auto _ = NewHook(hp, "01000A7019EBC000");
+        NewHook(hp, "01000A7019EBC000");
     }
 
     void ReadTextAndLenDW(hook_context *context, HookParam *hp, TextBuffer *buffer, uintptr_t *split)
@@ -1880,10 +1882,10 @@ namespace
     }
     void F0100874017BE2000(TextBuffer *buffer, HookParam *hp)
     {
-
         auto s = buffer->strW();
-        s = re::sub(s, (L"\\n+|(\\\\n)+"), L" ");
-        s = re::sub(s, (L"#n"));
+        s = re::sub(s, (L"\\n+|(\\\\n)+"));
+        strReplace(s, (L"#n"));
+        strReplace(s, (L"　"));
         buffer->from(s);
     }
     void F010094601D910000(TextBuffer *buffer, HookParam *hp)
@@ -2211,16 +2213,21 @@ namespace
         void F01009E600FAF6000(TextBuffer *buffer, HookParam *hpx)
         {
             auto s = buffer->strA();
-            HookParam hp;
-            hp.address = (uintptr_t)F01009E600FAF6000_collect;
-            hp.offset = GETARG(1);
-            hp.type = USING_STRING;
-            hp.filter_fun = [](TextBuffer *buffer, HookParam *hp)
+
+            if (!hpx->user_value)
             {
-                StringFilter(buffer, TEXTANDLEN("@1r"));
-                StringFilter(buffer, TEXTANDLEN("@-1r"));
-            };
-            static auto _ = NewHook(hp, "01009E600FAF6000");
+                hpx->user_value = 1;
+                HookParam hp;
+                hp.address = (uintptr_t)F01009E600FAF6000_collect;
+                hp.offset = GETARG(1);
+                hp.type = USING_STRING;
+                hp.filter_fun = [](TextBuffer *buffer, HookParam *hp)
+                {
+                    StringFilter(buffer, TEXTANDLEN("@1r"));
+                    StringFilter(buffer, TEXTANDLEN("@-1r"));
+                };
+                NewHook(hp, "01009E600FAF6000");
+            }
             static std::map<uint64_t, uintptr_t> mp;
             // 这个address会被触发两次。
             if (mp.find(hpx->emu_addr) == mp.end())
@@ -2400,14 +2407,18 @@ namespace
         void TT0100A4700BC98000(const char *_) {}
 #pragma optimize("", on)
 
-        void T0100A4700BC98000(TextBuffer *buffer, HookParam *)
+        void T0100A4700BC98000(TextBuffer *buffer, HookParam *hpx)
         {
             auto s = buffer->strA();
-            HookParam hp;
-            hp.address = (uintptr_t)TT0100A4700BC98000;
-            hp.offset = GETARG(1);
-            hp.type = CODEC_UTF8 | USING_STRING;
-            static auto _ = NewHook(hp, "0100A4700BC98000");
+            if (!hpx->user_value)
+            {
+                hpx->user_value = 1;
+                HookParam hp;
+                hp.address = (uintptr_t)TT0100A4700BC98000;
+                hp.offset = GETARG(1);
+                hp.type = CODEC_UTF8 | USING_STRING;
+                NewHook(hp, "0100A4700BC98000");
+            }
             TT0100A4700BC98000(s.c_str());
         }
     }
@@ -2416,16 +2427,19 @@ namespace
 #pragma optimize("", off)
         void F01006530151F0000_collect(const wchar_t *_) {}
 #pragma optimize("", on)
-        void F01006530151F0000(TextBuffer *buffer, HookParam *)
+        void F01006530151F0000(TextBuffer *buffer, HookParam *hpx)
         {
-
             auto s = buffer->strW();
             strReplace(s, L"/player");
-            HookParam hp;
-            hp.address = (uintptr_t)F01006530151F0000_collect;
-            hp.offset = GETARG(1);
-            hp.type = CODEC_UTF16 | USING_STRING;
-            static auto _ = NewHook(hp, "01006530151F0000");
+            if (!hpx->user_value)
+            {
+                hpx->user_value = 1;
+                HookParam hp;
+                hp.address = (uintptr_t)F01006530151F0000_collect;
+                hp.offset = GETARG(1);
+                hp.type = CODEC_UTF16 | USING_STRING;
+                NewHook(hp, "01006530151F0000");
+            }
             F01006530151F0000_collect(s.c_str());
             buffer->clear();
         }
@@ -3012,12 +3026,18 @@ namespace
             {0x80713be0, {CODEC_UTF8, 1, 0, 0, F010050000705E000, 0x010050000705E000ull, "1.7.3"}}, // Mission3
             {0x8076ab04, {CODEC_UTF8, 1, 0, 0, F010050000705E000, 0x010050000705E000ull, "1.7.3"}}, // Tutorial header
             {0x8076ab2c, {CODEC_UTF8, 1, 0, 0, F010050000705E000, 0x010050000705E000ull, "1.7.3"}}, // Tutorial explanation
+            // BUSTAFELLOWS
+            {0x80191b18, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // Dialogue
+            {0x80191f88, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // Choice
+            {0x801921a4, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // Choice 2
+            {0x801935f0, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // option
             // BUSTAFELLOWS シーズン2
-            {0x819ed3e4, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010037400DAAE000ull, "1.0.0"}}, // dialogue
-            {0x82159cd0, {CODEC_UTF16, 1, 0, ReadTextAndLenW, F0100874017BE2000, 0x010037400DAAE000ull, "1.0.0"}}, // textmessage
-            {0x81e17530, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010037400DAAE000ull, "1.0.0"}}, // option
-            {0x81e99d64, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010037400DAAE000ull, "1.0.0"}}, // choice
-            {0x8186f81c, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010037400DAAE000ull, "1.0.0"}}, // archives
+            {0x819ed3e4, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x0100874017BE2000ull, "1.0.0"}}, // dialogue
+            {0x82159cd0, {CODEC_UTF16, 1, 0, ReadTextAndLenW, F0100874017BE2000, 0x0100874017BE2000ull, "1.0.0"}}, // textmessage
+            {0x81e17530, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x0100874017BE2000ull, "1.0.0"}}, // option
+            {0x81e99d64, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x0100874017BE2000ull, "1.0.0"}}, // choice
+            {0x8186f81c, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x0100874017BE2000ull, "1.0.0"}}, // archives
+            {0x819ED7C8, {CODEC_UTF16, 1, 0, ReadTextAndLenW, F0100874017BE2000, 0x0100874017BE2000ull, "1.0.2"}},
             // 5分後に意外な結末　モノクロームの図書館
             {0x81fa4890, {CODEC_UTF16, 1, 0X14, 0, F010094601D910000, 0x010094601D910000ull, "1.0.1"}}, // book text
             {0x81fa5250, {CODEC_UTF16, 1, 0X14, 0, F010094601D910000, 0x010094601D910000ull, "1.0.1"}}, // book text
@@ -3189,7 +3209,7 @@ namespace
             {0x805c9014, {CODEC_UTF16, 0, 0, 0, F010043B013C5C000, 0x010029B018432000ull, "1.0.0"}}, // Story/Character Info
             // ひぐらしのなく頃に奉
             {0x800bd6c8, {0, 0, 0, 0, F0100F6A00A684000, 0x0100F6A00A684000ull, "1.0.0"}}, // sjis
-            {0x800c2d20, {0, 0, 0, 0, F0100F6A00A684000, 0x0100F6A00A684000ull, "1.2.0"}}, // sjis
+            {0x800c2d20, {0, 0, 0, 0, F0100F6A00A684000, 0x0100F6A00A684000ull, nullptr}}, //  1.2.0 && 2.0.2
             // うみねこのなく頃に咲 ～猫箱と夢想の交響曲～
             {0x800b4560, {CODEC_UTF8, 0, 0, 0, 0, 0x01006A300BA2C000ull, "1.0.0"}}, // x0 name + text (bottom, center) - whole line. filter is to complex, quit.
             {0x801049c0, {CODEC_UTF8, 0, 0, 0, 0, 0x01006A300BA2C000ull, "1.0.0"}}, // x0 prompt, bottomLeft
@@ -3437,11 +3457,6 @@ namespace
             {0x8034EB44, {CODEC_UTF16, 8, 0, 0, F01000A400AF2A000, 0x01000A400AF2A000ull, "1.0.0"}}, // text
             // 神様のような君へ
             {0x80487CD0, {CODEC_UTF8, 0, 0, 0, F01006B5014E2E000, 0x01006B5014E2E000ull, "1.0.0"}}, // text
-            // BUSTAFELLOWS
-            {0x80191b18, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // Dialogue
-            {0x80191f88, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // Choice
-            {0x801921a4, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // Choice 2
-            {0x801935f0, {CODEC_UTF16, 0, 0, ReadTextAndLenW, F0100874017BE2000, 0x010060800B7A8000ull, "1.1.3"}}, // option
             // 猛獣使いと王子様 ～Flower ＆ Snow～ for Nintendo Switch
             {0x800a1a10, {CODEC_UTF8, 1, 0, 0, F01001B900C0E2000, 0x01001B900C0E2000ull, "1.0.0"}}, // Dialogue 1
             {0x80058f80, {CODEC_UTF8, 1, 0, 0, F01001B900C0E2000, 0x01001B900C0E2000ull, "1.0.0"}}, // Dialogue 2
@@ -3825,6 +3840,7 @@ namespace
             {0x8180c1e8, {CODEC_UTF16, 0, 0x14, 0, F01008A401FEB6000_2, 0x01008A401FEB6000ull, "1.0.0"}},
             // 流行り神 １
             {0x80056424, {0, 0, 0, T01000A7019EBC000, 0, 0x01000A7019EBC000ull, "1.0.0"}},
+            {0x800563D4, {0, 0, 0, T01000A7019EBC000, 0, 0x01000A7019EBC000ull, "1.0.1"}},
             // 流行り神２
             {0x8004BD58, {0, 3, 0, 0, F0100B4D019EBE000, 0x0100B4D019EBE000ull, "1.0.0"}}, // 单字符刷新一次，不可以快进，被快进的字符无法捕获
             // 流行り神 ３
@@ -3882,6 +3898,9 @@ namespace
             {0x800D4B80, {CODEC_UTF16, 8, 0, 0, F01003B300E4AA000, 0x01003B300E4AA000ull, "1.0.0"}},  // ja
             {0x800A25E0, {CODEC_UTF8, 8, 0, 0, F0100943010310000, 0x01003B300E4AA000ull, "1.0.2"}},   // en
             {0x800A3EB0, {CODEC_UTF16, 8, 0, 0, F01003B300E4AA000, 0x01003B300E4AA000ull, "1.0.2"}},  // ja
+            // りゅうおうのおしごと！
+            {0x805F5A00, {CODEC_UTF16, 0xc, 0, 0, NewLineCharFilterW, 0x010033100EE12000ull, "1.0"}},
+            {0x805D5710, {CODEC_UTF16, 0xc, 0, 0, NewLineCharFilterW, 0x010033100EE12000ull, "1.0.3"}},
 
         };
         return 1;
