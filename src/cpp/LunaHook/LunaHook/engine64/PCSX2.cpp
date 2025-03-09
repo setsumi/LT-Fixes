@@ -320,10 +320,39 @@ namespace
         s = re::sub(s, LR"(^([a-zA-Z]+)|([a-zA-Z]+)$)");
         buffer->fromWA(s);
     }
+    void SLPM62343(TextBuffer *buffer, HookParam *hp)
+    {
+        CharFilter(buffer, '\n');
+        StringFilter(buffer, TEXTANDLEN("/K"));
+        StringFilter(buffer, TEXTANDLEN("/L"));
+        StringFilter(buffer, TEXTANDLEN("\x81\x40"));
+    }
     void FSLPS25547(TextBuffer *buffer, HookParam *hp)
     {
         CharFilter(buffer, '\n');
         FSLPS25677(buffer, hp);
+    }
+    void SLPS25809(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilter(buffer, TEXTANDLEN("/K"));
+        CharFilter(buffer, '\n');
+        auto s = buffer->strA();
+        static std::string last;
+        if (last == s)
+            return buffer->clear();
+        last = s;
+    }
+    void FSLPM66332(TextBuffer *buffer, HookParam *hp)
+    {
+        CharFilter(buffer, '\x01');
+        // 文本速度太慢了
+        auto s = buffer->strA();
+        static std::string last;
+        if (startWith(s, last))
+        {
+            buffer->from(s.substr(last.size()));
+        }
+        last = s;
     }
     void FSLPM55195(TextBuffer *buffer, HookParam *hp)
     {
@@ -353,10 +382,20 @@ namespace
             // ブラッドプラス ワン ナイト キス
             {0x267B58, {0, PCSX2_REG_OFFSET(a3), 0, 0, FSLPS25677, "SLPS-25677"}},
             {0x268260, {0, PCSX2_REG_OFFSET(a3), 0, 0, FSLPS25677, "SLPS-25677"}},
-            // プリンセスラバー！ Eternal Love For My Lady [初回限定版]
+            // プリンセスラバー！ Eternal Love For My Lady
             {0x92748C, {DIRECT_READ, 0, 0, 0, FSLPM55195, "SLPM-55195"}},
             // 破滅のマルス
             {0x308460, {DIRECT_READ, 0, 0, 0, FSLPM65997, "SLPM-65997"}},
+            // フレンズ ～青春の輝き～
+            {0x456048, {DIRECT_READ, 0, 0, 0, 0, "SLPS-25385"}},
+            // SAMURAI 7
+            {0x190FDac, {DIRECT_READ, 0, 0, 0, FSLPM65997, "SLPM-66399"}},
+            // 高円寺女子サッカー
+            {0x53FA10, {DIRECT_READ | CODEC_UTF8, 0, 0, 0, FSLPM66332, "SLPM-66332"}},
+            // 銀魂 銀さんと一緒！ボクのかぶき町日記
+            {0x8DA13A, {DIRECT_READ, 0, 0, 0, SLPS25809, "SLPS-25809"}},
+            // THE 恋愛ホラーアドベンチャー～漂流少女～
+            {0x1A1640, {DIRECT_READ, 0, 0, 0, SLPM62343, "SLPM-62343"}},
         };
         return 0;
     }();
