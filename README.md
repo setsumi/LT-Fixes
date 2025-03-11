@@ -15,3 +15,5 @@
 ### Download
 
 https://github.com/setsumi/LT-Fixes/releases
+
+Legacy LunaHook v5.0.0: https://github.com/setsumi/LunaHook/releases
