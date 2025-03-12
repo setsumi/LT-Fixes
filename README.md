@@ -11,6 +11,7 @@
 - Added colon after translator name in Webview2 (v7.18.2 and later)
 - Allow extensions in browser translation (DeepL CDP) (v7.18.3 and later)
 - Renamed English "General LLM Interface" to "General LLM"
+- **\[upstream\]** v7.18.6 changed Local OCR
 
 ### Download
 
