@@ -12,6 +12,7 @@
 - Allow extensions in browser translation (DeepL CDP) (v7.18.3 and later)
 - Renamed English "General LLM Interface" to "General LLM"
 - **\[upstream\]** v7.18.6 changed Local OCR
+- Keep `--remote-allow-origins=* --disable-gpu` in browser translation (DeepL CDP) (v7.18.8.1 and later)
 
 ### Download
 
