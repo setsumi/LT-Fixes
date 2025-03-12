@@ -1064,8 +1064,20 @@ class MAINUI:
         trayMenu.addAction(quitAction)
         self.tray.setContextMenu(trayMenu)
         self.tray.activated.connect(self.leftclicktray)
-        self.tray.messageClicked.connect(self.triggertoupdate)
+        self.tray.messageClicked.connect(print)
         self.tray.show()
+        ver = winsharedutils.queryversion(getcurrexe())
+        version = str(ver)
+        if "load_doc_or_log" not in globalconfig:
+            os.startfile(dynamiclink("{docs_server}"))
+        elif version != globalconfig["load_doc_or_log"]:
+            self.showtraymessage(
+                "v" + ".".join(str(_) for _ in ver),
+                _TR("更新记录"),
+                lambda: os.startfile(dynamiclink("{main_server}/ChangeLog")),
+            )
+
+        globalconfig["load_doc_or_log"] = version
 
     def triggertoupdate(self):
         self.istriggertoupdate = True
@@ -1075,7 +1087,9 @@ class MAINUI:
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self.translation_ui.showhideui()
 
-    def showtraymessage(self, title, message):
+    def showtraymessage(self, title, message, callback):
+        self.tray.messageClicked.disconnect()
+        self.tray.messageClicked.connect(callback)
         self.tray.showMessage(title, message, getExeIcon(getcurrexe()))
 
     def destroytray(self):
