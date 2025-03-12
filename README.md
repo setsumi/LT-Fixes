@@ -1,6 +1,6 @@
 # LunaTranslator Fixes + LunaHook
 
-### Changes
+### Notes
 
 - Changed app [icon](https://github.com/HIllya51/LunaTranslator/discussions/1109)
 - Disabled check for updates
