@@ -15,7 +15,7 @@
 
 ### Download
 
-https://github.com/setsumi/LT-Fixes/releases \
-https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true
+LunaTranslator: https://github.com/setsumi/LT-Fixes/releases \
+LunaHook: https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true
 
 Legacy LunaHook v5.0.0: https://github.com/setsumi/LunaHook/releases
