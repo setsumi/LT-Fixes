@@ -13,6 +13,7 @@
 - Renamed English "General LLM Interface" to "General LLM"
 - **\[upstream\]** v7.18.6 changed Local OCR
 - Keep `--remote-allow-origins=* --disable-gpu` in browser translation (DeepL CDP) (v7.18.8.1 and later)
+- **\[note\]** To use portable Webview2 set environment variable `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER=C:\portable\webview2`
 
 ### Download
 
