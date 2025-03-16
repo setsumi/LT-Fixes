@@ -1,8 +1,7 @@
 from myutils.config import globalconfig
-import functools, threading
+import functools
 from myutils.wrapper import threader
 from traceback import print_exc
-from myutils.proxy import getproxy
 from myutils.utils import LRUCache, stringfyerror
 from myutils.commonbase import commonbase
 
@@ -11,6 +10,15 @@ class SpeechParam:
     def __init__(self, speed, pitch):
         self.speed = speed
         self.pitch = pitch
+
+    def __hash__(self):
+        return self._tuple_().__hash__()
+
+    def __eq__(self, value: "SpeechParam"):
+        return self._tuple_() == value._tuple_()
+
+    def _tuple_(self):
+        return tuple((self.speed, self.pitch))
 
 
 class TTSbase(commonbase):
