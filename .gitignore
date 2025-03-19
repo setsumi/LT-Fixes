@@ -57,3 +57,5 @@ src/mdx
 src/translation_record
 src/scripts/temp
 src/LunaTranslator/gui/transhistwebview_parsed.html
+.github/README.md
+.github/README_en.md
