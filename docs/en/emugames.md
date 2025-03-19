@@ -298,6 +298,7 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | 01000A7019EBC000 | 流行り神 １ |
 |  | 0100B4D019EBE000 | 流行り神２ |
 |  | 01005BB019EC0000 | 流行り神 ３ |
+|  | 010095B01AF94000 | 流行り神 １・２・３パック |
 |  | 010005F00E036000 | 真 流行り神１・２パック |
 |  | 0100AA1013B96000 | 真流行り神3 |
 |  | 01001E601F6B8000 | 制服カノジョ まよいごエンゲージ |
@@ -323,6 +324,10 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | 0100A89019EEC000 | さくら、もゆ。-as the Night's, Reincarnation- |
 |  | 010039F0202BC000 | 神椿市建設中。REGENERATE |
 |  | 01009A401E186000 | ヒプノシスマイク -Alternative Rap Battle- 1st period |
+|  | 010081E0161B2000 | D.C.4 Fortunate Departures ～ダ・カーポ4～ フォーチュネイトデパーチャーズ |
+|  | 010048101D49E000 | Re;quartz零度 |
+|  | 0100B6501FE4C000 | 喧嘩番長 乙女 ダブルパック |
+|  | 010008401AB4A000 | Yukar From The Abyss |
 
 == PSP
 
@@ -377,7 +382,9 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | NPJH50243 | ティアーズ・トゥ・ティアラ 外伝 アヴァロンの謎 ＰＯＲＴＡＢＬＥ |
 |  | ULJM05802 | 薔薇ノ木ニ薔薇ノ花咲ク |
 |  | ULJM05690 | D.C. Girl's Symphony Pocket ～ダ・カーポ～ ガールズシンフォニーポケット |
+|  | ULJM06239 | D.C.III Plus ～ダ・カーポIII～プラス |
 |  | ULJM05437 | Ever17 -the out of infinity- Premium Edition |
+|  | ULJM05433 | Never7 -the end of infinity- |
 |  | ULJM06168 | 24時の鐘とシンデレラ～Halloween Wedding～ |
 |  | ULJM06023 | １２時の鐘とシンデレラ～Halloween Wedding～ |
 |  | ULJM06272 | 0時の鐘とシンデレラ～Halloween Wedding～ |
@@ -397,7 +404,6 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | ULJS00316 | ティンクル☆くるせいだーす GoGo! |
 |  | NPJH50808 | 明治東亰恋伽 |
 |  | NPJH50900 | 明治東亰恋伽 トワヰライト・キス |
-|  | ULJM05433 | Never7 -the end of infinity- |
 |  | ULJM06302 & ULJM06303 | 青春はじめました！ |
 |  | ULJM06064 | アーメン・ノワール ポータブル |
 |  | ULJM05823 | デス・コネクション　ポータブル |
@@ -607,7 +613,6 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | ULJM06224 | Stellar☆Theater Portable |
 |  | ULJM05683 | Starry☆Sky ～in Spring～ Portable |
 |  | ULJS00563 | 英国探偵ミステリア |
-|  | ULJM06239 | D.C.III Plus ～ダ・カーポIII～プラス |
 |  | ULJM06305 | 変態王子と笑わない猫。 |
 |  | ULJM05848 | Are you Alice? |
 |  | ULJM05768 | 加奈～いもうと～ |
@@ -641,6 +646,7 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | NPJH50689 | MISSINGPARTS the TANTEI stories Complete |
 |  | ULJM05659 | Canvas3 ～七色の奇跡～ |
 |  | UCJS10002 | どこでもいっしょ |
+|  | ULJS00293 | テイルズ オブ ファンタジア なりきりダンジョンX |
 
 == PSV
 

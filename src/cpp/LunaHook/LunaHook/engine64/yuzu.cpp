@@ -741,7 +741,23 @@ namespace
         s = re::sub(s, (L"\\\\n"), L" ");
         buffer->from(s);
     }
-
+    void F0100B6501FE4C000(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strW();
+        s = re::sub(s, (LR"([\r\n]+)"));
+        buffer->from(s);
+    }
+    void F010048101D49E000(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strW();
+        s = re::sub(s, (LR"(\$\[(.*?)\$/(.*?)\$\])"), L"$1");
+        s = re::sub(s, (LR"(@(.*?)@)"), L"$1");
+        if (hp->offset == 9)
+        {
+            strReplace(s, L"$d", L"\n");
+        }
+        buffer->from(s);
+    }
     void F01004EB01A328000(TextBuffer *buffer, HookParam *hp)
     {
         StringFilter(buffer, TEXTANDLEN("#n"));
@@ -776,6 +792,16 @@ namespace
         s = re::sub(s, (R"(<CLY2>(.*?)<CLNA>([\s\S]*))"), __);
         buffer->from(s);
     }
+    void F010081E0161B2000(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strA();
+        s = re::sub(s, (R"(@v\w+_\w+_\w+)"));
+        s = re::sub(s, ("@r(.*?)@(.*?)@"), "$1");
+        s = re::sub(s, (R"(@t\w{4})"));
+        s = re::sub(s, (R"(@h\w+_\d+)"));
+        strReplace(s, "@n");
+        buffer->from(s);
+    }
     namespace
     {
         static std::string F0100FB50156E6000;
@@ -785,7 +811,7 @@ namespace
             s = re::sub(s, (R"(@v\(\d+\))"));
             F0100FB50156E6000 = s;
             s = re::sub(s, ("@r(.*?)@(.*?)@"), "$1");
-            s = re::sub(s, ("@n"));
+            strReplace(s, "@n");
             buffer->from(s);
         }
         void F0100FB50156E6000_2(TextBuffer *buffer, HookParam *hp)
@@ -3875,7 +3901,11 @@ namespace
             // 流行り神２
             {0x8004BD58, {0, 3, 0, 0, F0100B4D019EBE000, 0x0100B4D019EBE000ull, "1.0.0"}}, // 单字符刷新一次，不可以快进，被快进的字符无法捕获
             // 流行り神 ３
-            {0x800D8AA0, {0, 0x3, 0, T001005BB019EC0000, Fliuxingzhishen, 0x01005BB019EC0000ull, "1.0.0"}}, // 单字符疯狂刷新，没办法了
+            {0x800D8AA0, {0, 3, 0, T001005BB019EC0000, Fliuxingzhishen, 0x01005BB019EC0000ull, "1.0.0"}}, // 单字符疯狂刷新，没办法了
+            // 流行り神 １・２・３パック
+            {0x800A8294, {0, 0, 0, T01000A7019EBC000, 0, 0x010095B01AF94000ull, "1.0.0"}}, // 1
+            {0x801CC3D0, {0, 2, 0, 0, Fliuxingzhishen, 0x010095B01AF94000ull, "1.0.0"}},   // 2  单字符疯狂刷新
+            {0x801BB5A0, {0, 0, 0, 0, Fliuxingzhishen, 0x010095B01AF94000ull, "1.0.0"}},   // 3  单字符疯狂刷新
             // 真 流行り神１・２パック
             {0x80072720, {CODEC_UTF8, 1, 0, 0, F010005F00E036000, 0x010005F00E036000ull, "1.0.0"}},
             // 真流行り神3  //1.0.0 & 1.0.1
@@ -3950,6 +3980,18 @@ namespace
             {0x81607D1C, {CODEC_UTF16, 0, 0, ReadTextAndLenDW, F010039F0202BC000, 0x010039F0202BC000ull, "1.0.1"}},
             // ヒプノシスマイク -Alternative Rap Battle- 1st period
             {0x82F78350, {CODEC_UTF16, 1, 0, ReadTextAndLenDW, NewLineCharFilterW, 0x01009A401E186000ull, "1.0.0"}},
+            // D.C.4 Fortunate Departures ～ダ・カーポ4～ フォーチュネイトデパーチャーズ
+            {0x8043D69C, {CODEC_UTF8, 0, 0, 0, F010081E0161B2000, 0x010081E0161B2000ull, "1.0.0"}},
+            // Re;quartz零度
+            {0x8017F0CC, {CODEC_UTF16, 8, 0, 0, F010048101D49E000, 0x010048101D49E000ull, "1.0.0"}},
+            {0x800ef69c, {CODEC_UTF16, 1, 0, 0, F010048101D49E000, 0x010048101D49E000ull, "1.0.1"}},
+            {0x8011aea4, {CODEC_UTF16, 9, 0, 0, F010048101D49E000, 0x010048101D49E000ull, "1.0.1"}},
+            // 喧嘩番長 乙女 ダブルパック
+            {0x81801c7c, {CODEC_UTF16, 0, 0x14, 0, F0100B6501FE4C000, 0x0100B6501FE4C000ull, "1.1.0"}},
+            {0x8161f640, {CODEC_UTF16, 0, 0x14, 0, F0100B6501FE4C000, 0x0100B6501FE4C000ull, "1.1.0"}},
+            {0x817f8490, {CODEC_UTF16, 1, 0x14, 0, F0100B6501FE4C000, 0x0100B6501FE4C000ull, "1.1.0"}},
+            // Yukar From The Abyss
+            {0x82396AFC, {CODEC_UTF16, 0, 0x14, 0, 0, 0x010008401AB4A000ull, "1.0.0"}},
         };
         return 1;
     }();
