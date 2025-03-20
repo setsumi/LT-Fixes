@@ -1216,7 +1216,6 @@
             "name": "GoogleTTS",
             "voice": "",
             "arg_not_sup": [
-                "rate",
                 "pitch"
             ]
         }
@@ -1402,7 +1401,7 @@
             }
         },
         "mdict": {
-            "use": false,
+            "use": true,
             "name": "MDict",
             "args": {
                 "paths": [],
@@ -1908,5 +1907,6 @@
     "textoutput_trans": false,
     "wordlabel": [],
     "getWordFallbackClipboard": true,
-    "verticalhorizontal": false
+    "verticalhorizontal": false,
+    "noundictconfig_ex": []
 }
