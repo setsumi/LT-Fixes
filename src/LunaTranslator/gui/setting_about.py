@@ -14,13 +14,13 @@ from gui.usefulwidget import (
     D_getsimpleswitch,
     makescrollgrid,
     CollapsibleBoxWithButton,
-    makesubtab_lazy,
     D_getsimplecombobox,
     makegrid,
     D_getIconButton,
+    getsmalllabel,
 )
 from language import UILanguages, Languages
-from gui.dynalang import LLabel, LPushButton
+from gui.dynalang import LLabel
 
 versionchecktask = queue.Queue()
 
@@ -161,7 +161,45 @@ def uncompress(self, savep):
 
 @threader
 def versioncheckthread(self):
-    return
+    versionchecktask.put(True)
+    while True:
+        x = versionchecktask.get()
+        gobject.baseobject.update_avalable = False
+        self.progresssignal4.emit("", 0)
+        if not x:
+            continue
+        self.versiontextsignal.emit("获取中")  # ,'',url,url))
+        _version = trygetupdate()
+
+        if _version is None:
+            sversion = "获取失败"
+        else:
+            sversion = _version[0]
+        self.versiontextsignal.emit(sversion)
+        if getcurrexe().endswith("python.exe"):
+            continue
+        version = winsharedutils.queryversion(getcurrexe())
+        need = (
+            version
+            and _version
+            and version < tuple(int(_) for _ in _version[0][1:].split("."))
+        )
+        if not (need and globalconfig["autoupdate"]):
+            continue
+        self.progresssignal4.emit("……", 0)
+        savep = updatemethod(_version[1:], self)
+        if not savep:
+            self.progresssignal4.emit(_TR("自动更新失败，请手动更新"), 0)
+            continue
+
+        uncompress(self, savep)
+        gobject.baseobject.update_avalable = True
+        self.progresssignal4.emit(_TR("准备完毕，等待更新"), 10000)
+        gobject.baseobject.showtraymessage(
+            sversion,
+            _TR("准备完毕，等待更新") + "\n" + _TR("点击消息后退出并开始更新"),
+            gobject.baseobject.triggertoupdate,
+        )
 
 
 def createdownloadprogress(self):
@@ -190,19 +228,22 @@ def createdownloadprogress(self):
 
 def createversionlabel(self):
 
-    self.versionlabel = LLabel()
-    self.versionlabel.setOpenExternalLinks(True)
-    self.versionlabel.setTextInteractionFlags(
-        Qt.TextInteractionFlag.LinksAccessibleByMouse
+    versionlabel = LLabel()
+    versionlabel.setOpenExternalLinks(False)
+    versionlabel.linkActivated.connect(
+        lambda _: os.startfile(dynamiclink("{main_server}/ChangeLog"))
     )
+    versionlabel.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
     try:
-        self.versionlabel.setText(self.versionlabel_cache)
+        versionlabel.setText(self.versionlabel_cache)
     except:
         pass
+    self.versionlabel = versionlabel
     return self.versionlabel
 
 
 def versionlabelmaybesettext(self, x):
+    x = '<a href="fuck">{}</a>'.format(x)
     try:
         self.versionlabel.setText(x)
     except:
@@ -263,56 +304,6 @@ def offlinelinks(key):
     return box
 
 
-def updatelog():
-
-    box = LPushButton("更新记录")
-    box.clicked.connect(lambda: os.startfile(dynamiclink("{main_server}/ChangeLog")))
-    return box
-
-
-def setTab_about1(self, basel):
-
-    shuominggrid = [
-        ["Github", makehtml("https://github.com/setsumi/LT-Fixes")],
-        [
-            "使用说明",
-            makehtml("{docs_server}", show="https://docs.lunatranslator.org/"),
-        ],
-    ]
-    makescrollgrid(
-        [
-            [
-                (
-                    dict(
-                        grid=shuominggrid,
-                    ),
-                    0,
-                    "group",
-                )
-            ],
-        ],
-        basel,
-    )
-
-
-def setTab_about(self, basel):
-    tab_widget, do = makesubtab_lazy(
-        [
-            "关于软件",
-            "其他设置",
-            # "年度总结"
-        ],
-        [
-            functools.partial(setTab_about1, self),
-            functools.partial(setTab_update, self),
-            # functools.partial(yearsummary, self),
-        ],
-        delay=True,
-    )
-    basel.addWidget(tab_widget)
-    do()
-
-
 def changeUIlanguage(_):
     languageChangeEvent = QEvent(QEvent.Type.LanguageChange)
     QApplication.sendEvent(QApplication.instance(), languageChangeEvent)
@@ -322,7 +313,44 @@ def changeUIlanguage(_):
         pass
 
 
-def setTab_update(self, basel):
+def setTab_about(self, basel):
+    commonlink = [
+        getsmalllabel(
+            makehtml("https://github.com/HIllya51/LunaTranslator", show="Github")
+        ),
+        getsmalllabel(makehtml("{main_server}/", show="项目网站")),
+        getsmalllabel(makehtml("{docs_server}", show="使用说明")),
+    ]
+    qqqun = [
+        getsmalllabel(makehtml("{main_server}/Resource/QQGroup", show="QQ群_963119821"))
+    ]
+    discord = [
+        getsmalllabel(makehtml("{main_server}/Resource/DiscordGroup", show="Discord"))
+    ]
+    if getlanguse() in (Languages.Chinese, Languages.TradChinese):
+        if getlanguse() == Languages.TradChinese:
+            qqqun += discord
+        shuominggrid = [
+            [*commonlink, *qqqun, ""],
+            [("如果你感觉该软件对你有帮助，欢迎微信扫码赞助，谢谢~", -1)],
+            [(functools.partial(createimageview, self), -1)],
+        ]
+
+    else:
+        shuominggrid = [
+            [*commonlink, *discord, ""],
+            [],
+            [
+                ("If you feel that the software is helpful to you, ", -1),
+            ],
+            [
+                (
+                    'welcome to become my <a href="https://patreon.com/HIllya51">sponsor</a>. Thank you ~ ',
+                    -1,
+                ),
+            ],
+        ]
+
     version = winsharedutils.queryversion(getcurrexe())
     if version is None:
         versionstring = "unknown"
@@ -332,56 +360,73 @@ def setTab_update(self, basel):
             vs = vs[:-2]
         versionstring = ("v{} {}").format(vs, platform.architecture()[0])
     inner, vis = [_.code for _ in UILanguages], [_.nativename for _ in UILanguages]
-    grid2 = [
+    makescrollgrid(
         [
-            (
-                dict(
-                    title="版本更新",
-                    type="grid",
-                    grid=[
-                        [
-                            "当前版本",
-                            versionstring,
-                            "",
-                            functools.partial(updatelog),
-                        ],
-                        [(functools.partial(createdownloadprogress, self), 0)],
-                    ],
-                ),
-                0,
-                "group",
-            ),
-        ],
-        [
-            (
-                dict(
-                    title="软件显示语言",
-                    type="grid",
-                    grid=[
-                        [
-                            "软件显示语言",
-                            D_getsimplecombobox(
-                                vis,
-                                globalconfig,
-                                "languageuse2",
-                                callback=changeUIlanguage,
-                                static=True,
-                                internal=inner,
-                            ),
-                            D_getIconButton(
-                                callback=lambda: os.startfile(
-                                    os.path.abspath(
-                                        "./files/lang/{}.json".format(getlanguse())
-                                    )
+            [
+                (
+                    dict(
+                        type="grid",
+                        grid=[
+                            [
+                                "自动更新",
+                                D_getsimpleswitch(
+                                    globalconfig,
+                                    "autoupdate",
+                                    callback=versionchecktask.put,
                                 ),
-                            ),
+                                "",
+                                "当前版本",
+                                versionstring,
+                                "",
+                                "最新版本",
+                                functools.partial(createversionlabel, self),
+                            ],
+                            [(functools.partial(createdownloadprogress, self), 0)],
                         ],
-                    ],
+                    ),
+                    0,
+                    "group",
                 ),
-                0,
-                "group",
-            ),
+            ],
+            [
+                (
+                    dict(
+                        type="grid",
+                        grid=[
+                            [
+                                getsmalllabel("软件显示语言"),
+                                D_getsimplecombobox(
+                                    vis,
+                                    globalconfig,
+                                    "languageuse2",
+                                    callback=changeUIlanguage,
+                                    static=True,
+                                    internal=inner,
+                                ),
+                                D_getIconButton(
+                                    callback=lambda: os.startfile(
+                                        os.path.abspath(
+                                            "./files/lang/{}.json".format(getlanguse())
+                                        )
+                                    ),
+                                ),
+                            ],
+                        ],
+                    ),
+                    0,
+                    "group",
+                ),
+            ],
+            [
+                (
+                    dict(
+                        type="grid",
+                        grid=shuominggrid,
+                    ),
+                    0,
+                    "group",
+                )
+            ],
         ],
-    ]
-
-    makescrollgrid(grid2, basel)
+        basel,
+    )
