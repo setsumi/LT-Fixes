@@ -161,6 +161,7 @@ def uncompress(self, savep):
 
 @threader
 def versioncheckthread(self):
+    return
     versionchecktask.put(True)
     while True:
         x = versionchecktask.get()
@@ -235,7 +236,7 @@ def createversionlabel(self):
     )
     versionlabel.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
     try:
-        versionlabel.setText(self.versionlabel_cache)
+        versionlabel.setText('<a href="fuck">{}</a>'.format("Change Log"))
     except:
         pass
     self.versionlabel = versionlabel
@@ -316,7 +317,7 @@ def changeUIlanguage(_):
 def setTab_about(self, basel):
     commonlink = [
         getsmalllabel(
-            makehtml("https://github.com/HIllya51/LunaTranslator", show="Github")
+            makehtml("https://github.com/setsumi/LT-Fixes", show="LT-Fixes Github")
         ),
         getsmalllabel(makehtml("{main_server}/", show="项目网站")),
         getsmalllabel(makehtml("{docs_server}", show="使用说明")),
@@ -339,16 +340,6 @@ def setTab_about(self, basel):
     else:
         shuominggrid = [
             [*commonlink, *discord, ""],
-            [],
-            [
-                ("If you feel that the software is helpful to you, ", -1),
-            ],
-            [
-                (
-                    'welcome to become my <a href="https://patreon.com/HIllya51">sponsor</a>. Thank you ~ ',
-                    -1,
-                ),
-            ],
         ]
 
     version = winsharedutils.queryversion(getcurrexe())
@@ -368,18 +359,13 @@ def setTab_about(self, basel):
                         type="grid",
                         grid=[
                             [
-                                "自动更新",
-                                D_getsimpleswitch(
-                                    globalconfig,
-                                    "autoupdate",
-                                    callback=versionchecktask.put,
-                                ),
-                                "",
                                 "当前版本",
                                 versionstring,
-                                "",
-                                "最新版本",
                                 functools.partial(createversionlabel, self),
+                                "",
+                                "",
+                                "",
+                                "",
                             ],
                             [(functools.partial(createdownloadprogress, self), 0)],
                         ],
