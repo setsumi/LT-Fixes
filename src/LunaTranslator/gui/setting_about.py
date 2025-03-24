@@ -171,6 +171,7 @@ def versioncheckthread(self):
         x = versionchecktask.get()
         gobject.baseobject.update_avalable = False
         self.progresssignal4.emit("", 0)
+        return
         if not x:
             continue
         self.versiontextsignal.emit("获取中")  # ,'',url,url))
@@ -216,7 +217,7 @@ def createversionlabel(self):
     )
     versionlabel.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
     try:
-        versionlabel.setText(self.versionlabel_cache)
+        versionlabel.setText('<a href="fuck">{}</a>'.format("Change Log"))
     except:
         pass
     self.versionlabel = versionlabel
@@ -310,18 +311,14 @@ def updatexx(self):
     l.addRow(
         getboxlayout(
             [
-                "自动更新",
-                D_getsimpleswitch(
-                    globalconfig,
-                    "autoupdate",
-                    callback=versionchecktask.put,
-                ),
-                "",
                 "当前版本",
                 versionstring,
-                "",
-                "最新版本",
                 functools.partial(createversionlabel, self),
+                "",
+                "",
+                "",
+                "",
+                "",
             ]
         )
     )
@@ -362,7 +359,7 @@ class aboutwidget(NQGroupBox):
         clearlayout(self.grid)
         commonlink = [
             getsmalllabel(
-                makehtml("{main_server}/Github/LunaTranslator", show="Github")
+                makehtml("https://github.com/setsumi/LT-Fixes", show="LT-Fixes Github")
             ),
             getsmalllabel(makehtml("{main_server}/", show="项目网站")),
             getsmalllabel(makehtml("{docs_server}", show="使用说明")),
@@ -390,15 +387,6 @@ class aboutwidget(NQGroupBox):
                 discord = qqqun + discord
             shuominggrid = [
                 [*commonlink, *discord, ""],
-                [],
-                [("如果你感觉该软件对你有帮助，", -1)],
-                [
-                    (
-                        '欢迎成为我的<a href="https://patreon.com/HIllya51">sponsor</a>。谢谢~',
-                        -1,
-                        "link",
-                    )
-                ],
             ]
 
         automakegrid(self.grid, shuominggrid)
