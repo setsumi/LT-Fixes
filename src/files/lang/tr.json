@@ -81,7 +81,6 @@
     "过滤纯英文": "Tüm İngilizce'i sil",
     "过滤重复": "Çiftleri Süzdür",
     "获取失败": "Başarısız",
-    "不绘制光标": "İmleç çizme",
     "sqlite文件": "Sqlite dosyası",
     "替换为": "Bununla değiştir",
     "密钥": "gizli anahtar",
@@ -91,7 +90,6 @@
     "图标": "İşaretçi",
     "指示詞": "Deixis",
     "動詞": "Verbs",
-    "显示帧率": "Çerçive hızını göster",
     "游戏": "oyun",
     "剪裁UWP窗口的标题栏": "UWP penceresinin başlık çubuğunu tıklayın",
     "接尾辞": "yanlış",
@@ -314,7 +312,6 @@
     "缩放模式": "Yakınlaştırma tarzı",
     "捕获模式": "Yakalama modusu",
     "捕获标题栏": "Başlık Çubuğunu Yap",
-    "绘制光标": "İmleç Çizir",
     "禁用DirectFlip": "DirectFlip'i etkinleştir",
     "自定义剪裁": "Özel Klime",
     "常规": "rutin",
@@ -685,9 +682,6 @@
     "向下": "Aşağı",
     "无可用模型": "Mevcut modeller yok",
     "无可用语言": "Mevcut diller yok",
-    "过时的词典": "Eski sözlük",
-    "其他工具": "Diğer araçlar",
-    "过时的翻译器": "Eski çeviriciler",
     "翻译器加载失败": "Çevirme yüklemesi başarısız oldu",
     "核心设置": "İlk Ayarları",
     "手动设置代理": "Proksi el olarak ayarlayın",
@@ -801,5 +795,6 @@
     "设为首选": "",
     "QQ群": "",
     "如果你感觉该软件对你有帮助，": "Yazılımın size yardımcı olduğunu düşünüyorsanız,",
-    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Benim <a href = \"https://patreon.com/hillya51\"> sponsor </a> olmak için hoş geldiniz. Teşekkürler ~"
+    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Benim <a href = \"https://patreon.com/hillya51\"> sponsor </a> olmak için hoş geldiniz. Teşekkürler ~",
+    "过时的": ""
 }

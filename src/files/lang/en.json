@@ -4,7 +4,6 @@
     "查词": "Look Up Word",
     "文本": "Text",
     "插入特殊码": "Insert Hook Code",
-    "不绘制光标": "Don’t Draw Cursor",
     "退出": "Exit",
     "sqlite文件": "SQLite File",
     "翻译优化": "Translation Optimization",
@@ -28,7 +27,6 @@
     "指示詞": "Demonstratives",
     "搜索": "Search",
     "動詞": "Verbs",
-    "显示帧率": "Display FPS",
     "自动翻译": "Auto Translation",
     "锁定工具栏": "Lock Toolbar",
     "辞书设置": "Dictionary Settings",
@@ -314,7 +312,6 @@
     "缩放模式": "Zoom Mode",
     "捕获模式": "Capture Mode",
     "捕获标题栏": "Capture Title Bar",
-    "绘制光标": "Draw Cursor",
     "禁用DirectFlip": "Disable DirectFlip",
     "自定义剪裁": "Custom Cropping",
     "常规": "General",
@@ -685,9 +682,6 @@
     "向下": "Downward",
     "无可用模型": "No Available Models",
     "无可用语言": "No Available Languages",
-    "过时的词典": "Outdated Dictionary",
-    "其他工具": "Other Tools",
-    "过时的翻译器": "Outdated Translator",
     "翻译器加载失败": "Translator Loading Failed",
     "核心设置": "Core Settings",
     "手动设置代理": "Manual Proxy Settings",
@@ -801,5 +795,6 @@
     "设为首选": "",
     "QQ群": "",
     "如果你感觉该软件对你有帮助，": "If you feel that the software is helpful to you, ",
-    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "welcome to become my <a href=\"https://patreon.com/HIllya51\">sponsor</a>. Thank you ~ "
+    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "welcome to become my <a href=\"https://patreon.com/HIllya51\">sponsor</a>. Thank you ~ ",
+    "过时的": ""
 }

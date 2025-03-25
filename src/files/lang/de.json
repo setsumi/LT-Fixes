@@ -44,7 +44,6 @@
     "读取剪贴板": "Zwischenablage lesen",
     "游戏": "Spiel",
     "插值算法": "Interpolationsalgorithmus",
-    "显示帧率": "Framerate anzeigen",
     "最新版本": "Neueste Version",
     "搜索": "Suche",
     "特殊码": "spezifischer Code",
@@ -301,7 +300,6 @@
     "自动朗读": "Automatisches Lesen",
     "搜索设置": "Sucheinstellungen",
     "百度": "Baidu",
-    "不绘制光标": "Cursor nicht zeichnen",
     "搜索结果数上限": "Maximale Anzahl der Suchergebnisse",
     "当前版本": "aktuelle Version",
     "添加行": "Zeilen hinzufügen",
@@ -328,7 +326,6 @@
     "移动": "bewegen",
     "繁体中文": "Traditionelles Chinesisch",
     "替换": "ersetzen",
-    "绘制光标": "Cursor zeichnen",
     "颜色设置": "Farbeinstellung",
     "HOOK设置": "HOOK-Einstellungen",
     "結月ゆかり": "Ende des Monats",
@@ -685,9 +682,6 @@
     "向下": "nach unten",
     "无可用模型": "Keine verfügbaren Modelle",
     "无可用语言": "Keine verfügbaren Sprachen",
-    "过时的词典": "Veraltetes Wörterbuch",
-    "其他工具": "Andere Werkzeuge",
-    "过时的翻译器": "Veralteter Übersetzer",
     "翻译器加载失败": "Laden des Übersetzers fehlgeschlagen",
     "核心设置": "Kerneinstellungen",
     "手动设置代理": "Proxy manuell einrichten",
@@ -801,5 +795,6 @@
     "设为首选": "",
     "QQ群": "",
     "如果你感觉该软件对你有帮助，": "Wenn Sie der Meinung sind, dass die Software für Sie hilfreich ist,",
-    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Willkommen zu sein <a href = \"https://patreon.com/hillya51\"> Sponsor </a>. Danke ~"
+    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Willkommen zu sein <a href = \"https://patreon.com/hillya51\"> Sponsor </a>. Danke ~",
+    "过时的": ""
 }

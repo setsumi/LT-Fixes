@@ -81,7 +81,6 @@
     "过滤纯英文": "Filtro inglese puro",
     "过滤重复": "Filtri duplicati",
     "获取失败": "Acquisizione fallita",
-    "不绘制光标": "Non disegnare il cursore",
     "sqlite文件": "File Sqlite",
     "替换为": "Sostituisci con",
     "密钥": "chiave segreta",
@@ -91,7 +90,6 @@
     "图标": "icona",
     "指示詞": "Parole dimostrative",
     "動詞": "Verbi",
-    "显示帧率": "Mostra frame rate",
     "游戏": "gioco",
     "剪裁UWP窗口的标题栏": "Taglia la barra del titolo della finestra UWP",
     "接尾辞": "suffisso",
@@ -314,7 +312,6 @@
     "缩放模式": "Modalità zoom",
     "捕获模式": "Modalità cattura",
     "捕获标题栏": "Cattura barra del titolo",
-    "绘制光标": "Disegna cursore",
     "禁用DirectFlip": "Disabilita DirectFlip",
     "自定义剪裁": "Taglio personalizzato",
     "常规": "routine",
@@ -685,9 +682,6 @@
     "向下": "giù",
     "无可用模型": "Nessun modello disponibile",
     "无可用语言": "Nessuna lingua disponibile",
-    "过时的词典": "Dizionario obsoleto",
-    "其他工具": "Altri strumenti",
-    "过时的翻译器": "Traduttore obsoleto",
     "翻译器加载失败": "Caricamento del traduttore non riuscito",
     "核心设置": "Impostazioni centrali",
     "手动设置代理": "Configura manualmente il proxy",
@@ -801,5 +795,6 @@
     "设为首选": "",
     "QQ群": "",
     "如果你感觉该软件对你有帮助，": "Se ritieni che il software ti sia utile,",
-    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Benvenuto in Be My <a href = \"https://patreon.com/hillya51\"> sponsor </a>. Grazie ~"
+    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Benvenuto in Be My <a href = \"https://patreon.com/hillya51\"> sponsor </a>. Grazie ~",
+    "过时的": ""
 }

@@ -81,7 +81,6 @@
     "过滤纯英文": "Lọc tiếng Anh thuần túy",
     "过滤重复": "Lọc trùng lặp",
     "获取失败": "Nhận thất bại",
-    "不绘制光标": "Không vẽ con chạy",
     "sqlite文件": "Tập tin sqlite",
     "替换为": "Thay thế bằng",
     "密钥": "Chìa khóa",
@@ -91,7 +90,6 @@
     "图标": "Biểu tượng",
     "指示詞": "Từ chỉ dẫn",
     "動詞": "Động từ",
-    "显示帧率": "Hiện khung hình",
     "游戏": "Trò chơi",
     "剪裁UWP窗口的标题栏": "Cắt thanh tiêu đề của cửa sổ UWP",
     "接尾辞": "Kết thúc",
@@ -314,7 +312,6 @@
     "缩放模式": "Chế độ phóng to",
     "捕获模式": "Chế độ chụp",
     "捕获标题栏": "Bắt thanh tiêu đề",
-    "绘制光标": "Vẽ con chạy",
     "禁用DirectFlip": "Tắt DirectFlip",
     "自定义剪裁": "Cắt tùy chỉnh",
     "常规": "Thông thường",
@@ -685,9 +682,6 @@
     "向下": "Xuống",
     "无可用模型": "Không có mẫu",
     "无可用语言": "Không có ngôn ngữ",
-    "过时的词典": "Từ điển lỗi thời",
-    "其他工具": "Công cụ khác",
-    "过时的翻译器": "Trình dịch lỗi thời",
     "翻译器加载失败": "Trình dịch không tải được",
     "核心设置": "Thiết lập lõi",
     "手动设置代理": "Thiết lập proxy theo cách thủ công",
@@ -801,5 +795,6 @@
     "设为首选": "",
     "QQ群": "",
     "如果你感觉该软件对你有帮助，": "Nếu bạn cảm thấy phần mềm này hữu ích cho bạn,",
-    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Chào mừng bạn đến với <a href = \"https://patreon.com/hillya51\"> Nhà tài trợ </a>. Cảm ơn bạn ~"
+    "欢迎成为我的<a href=\"https://patreon.com/HIllya51\">sponsor</a>。谢谢~": "Chào mừng bạn đến với <a href = \"https://patreon.com/hillya51\"> Nhà tài trợ </a>. Cảm ơn bạn ~",
+    "过时的": ""
 }
