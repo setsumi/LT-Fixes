@@ -1,7 +1,12 @@
 from translator.basetranslator import basetrans
 import json, requests, hmac, hashlib, re
 from datetime import datetime, timezone
-from myutils.utils import createurl, common_list_models, common_parse_normal_response
+from myutils.utils import (
+    createurl,
+    common_list_models,
+    common_parse_normal_response,
+    markdown_to_html,
+)
 from myutils.proxy import getproxy
 from language import Languages
 
@@ -32,8 +37,9 @@ def stream_event_parser(response: requests.Response):
         yield json_data
 
 
-def commonparseresponse_good(hidethinking: bool, response: requests.Response):
-
+def commonparseresponse_good(
+    response: requests.Response, hidethinking: bool, markdown2html: bool
+):
     message = ""
     thinkcnt = 0
     isthinking = False
@@ -75,7 +81,12 @@ def commonparseresponse_good(hidethinking: bool, response: requests.Response):
                         pass
                     else:
                         message += msg
-                        yield msg
+                        if markdown2html:
+                            _msg = markdown_to_html(message)
+                            yield "\0"
+                            yield "LUNASHOWHTML" + _msg
+                        else:
+                            yield msg
             rs = json_data["choices"][0].get("finish_reason")
             if rs and rs != "null":
                 break
@@ -84,15 +95,20 @@ def commonparseresponse_good(hidethinking: bool, response: requests.Response):
     return message
 
 
-def parseresponsegemini(response: requests.Response):
+def parseresponsegemini(response: requests.Response, markdown2html: bool):
     line = ""
     for __x in response.iter_lines(decode_unicode=True):
         __x = __x.strip()
         if not __x.startswith('"text":'):
             continue
         __x = json.loads("{" + __x + "}")["text"]
-        yield __x
         line += __x
+        if markdown2html:
+            _msg = markdown_to_html(line)
+            yield "\0"
+            yield "LUNASHOWHTML" + _msg
+        else:
+            yield __x
     return line
 
 
@@ -121,8 +137,9 @@ def parseresponseclaude(response: requests.Response):
     return message
 
 
-def parsestreamresp(hidethinking: bool, apiurl: str, response: requests.Response):
-
+def parsestreamresp(
+    apiurl: str, response: requests.Response, hidethinking: bool, markdown2html: bool
+):
     if (response.status_code != 200) and (
         not response.headers["Content-Type"].startswith("text/event-stream")
     ):
@@ -130,11 +147,13 @@ def parsestreamresp(hidethinking: bool, apiurl: str, response: requests.Response
         # text/html
         raise Exception(response)
     if apiurl.startswith("https://generativelanguage.googleapis.com"):
-        respmessage = yield from parseresponsegemini(response)
+        respmessage = yield from parseresponsegemini(response, markdown2html)
     elif apiurl.startswith("https://api.anthropic.com/v1/messages"):
         respmessage = yield from parseresponseclaude(response)
     else:
-        respmessage = yield from commonparseresponse_good(hidethinking, response)
+        respmessage = yield from commonparseresponse_good(
+            response, hidethinking, markdown2html
+        )
     return respmessage
 
 
@@ -264,15 +283,19 @@ class gptcommon(basetrans):
                 stream=usingstream,
             )
         hidethinking = self.config.get("hidethinking", False)
+        markdown2html = self.config.get("markdown2html", False)
         if usingstream:
             respmessage = yield from parsestreamresp(
-                hidethinking, self.apiurl, response
+                self.apiurl, response, hidethinking, markdown2html
             )
         else:
             respmessage = common_parse_normal_response(
                 response, self.apiurl, hidethinking=hidethinking
             )
-            yield respmessage
+            if markdown2html:
+                yield "LUNASHOWHTML" + markdown_to_html(respmessage)
+            else:
+                yield respmessage
         if not (query.strip() and respmessage.strip()):
             return
         self.context.append({"role": "user", "content": query})

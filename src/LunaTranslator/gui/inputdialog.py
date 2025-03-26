@@ -540,6 +540,8 @@ class autoinitdialog(LDialog):
         cachecombo = {}
         cachehasref = {}
         for line in lines:
+            if line.get("hide"):
+                continue
             if "k" in line:
                 key = line["k"]
             if line["type"] == "label":
@@ -683,6 +685,8 @@ class autoinitdialog(LDialog):
                     _TR("取消")
                 )
             elif line["type"] == "lineedit":
+                if not isinstance(dd[key], str):
+                    continue
                 lineW = QLineEdit(dd[key])
                 regist[key] = lineW.text
             elif line["type"] == "multiline":
