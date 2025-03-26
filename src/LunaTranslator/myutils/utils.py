@@ -392,16 +392,25 @@ def checkportavailable(port):
 
 
 def splittranslatortypes():
-    pre, offline, free, api = [], [], [], []
+    class __:
+        def __init__(self):
+            self.pre, self.offline, self.free, self.api = [], [], [], []
+            self.other = []
+
+    ls = __()
     for k in globalconfig["fanyi"]:
         try:
-            {"pre": pre, "offline": offline, "free": free, "api": api}[
-                globalconfig["fanyi"][k].get("type", "free")
-            ].append(k)
+            {
+                "pre": ls.pre,
+                "offline": ls.offline,
+                "free": ls.free,
+                "api": ls.api,
+                "other": ls.other,
+            }[globalconfig["fanyi"][k].get("type", "free")].append(k)
         except:
             pass
 
-    return offline, pre, free, api
+    return ls
 
 
 def splitocrtypes(dic):
@@ -1040,14 +1049,15 @@ def dynamiccishuname(apiuid):
 
 def getannotatedapiname(x):
     tp = globalconfig["fanyi"][x].get("type", "free")
+    is_gpt_like = globalconfig["fanyi"][x].get("is_gpt_like", False)
     return (
         dynamicapiname(x)
         + "_("
         + {
-            "free": "在线翻译",
-            "api": "注册在线翻译",
+            "free": "传统",
+            "api": ("传统_API", "大模型")[is_gpt_like],
             "pre": "预翻译",
-            "offline": "离线翻译",
+            "offline": ("过时的", "大模型_离线翻译")[is_gpt_like],
         }.get(tp, "unknown type")
         + ")"
     )
