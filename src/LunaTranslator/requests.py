@@ -423,16 +423,8 @@ class Requester_common:
         return _ct, b"".join(_ + b"\r\n" for _ in items)
 
 
-class Requesters:
-    winhttp = 0
-    libcurl = 1
-
-
 class Session:
-    def __init__(
-        self,
-        requester: Requesters = None,
-    ):
+    def __init__(self):
 
         self.cookies = {}
         self._requester = None
@@ -444,9 +436,7 @@ class Session:
                 "Connection": "keep-alive",
             }
         )
-        if requester is not None:
-            self._loadwitch(requester)
-        self.requester_idx = requester
+        self.requester_idx = None
 
     def __enter__(self):
         return self
