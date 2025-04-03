@@ -1063,6 +1063,7 @@ class MAINUI:
     def inittray(self):
         self.tray = QSystemTrayIcon()
         self.tray.setIcon(getExeIcon(getcurrexe()))
+        self.tray.setToolTip("LunaTranslator")
         trayMenu = QMenu(self.commonstylebase)
         showAction = LAction("显示", trayMenu)
         showAction.triggered.connect(self.translation_ui.show_)
