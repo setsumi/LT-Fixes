@@ -129,8 +129,24 @@ def updatemethod(urls, self):
     savep = gobject.getcachedir("update/" + url.split("/")[-1])
     if not savep.endswith(".zip"):
         savep += ".zip"
-    r2 = requests.head(url, verify=False, proxies=getproxy())
-    size = int(r2.headers["Content-Length"])
+    wait = threading.Semaphore(0)
+    results = []
+    proxies = [None]
+    if getproxy().get("https"):
+        proxies.append(getproxy())
+    for proxy in proxies:
+
+        @threader
+        @trypass
+        def __(proxy):
+
+            r2 = requests.head(url, verify=False, proxies=proxy)
+            results.append((proxy, r2))
+            wait.release()
+
+        __(proxy)
+    wait.acquire()
+    size = int(results[0][1].headers["Content-Length"])
     if check_interrupt():
         return
     if updatemethod_checkalready(size, savep, sha256):
@@ -141,7 +157,7 @@ def updatemethod(urls, self):
             url,
             stream=True,
             verify=False,
-            proxies=getproxy(),
+            proxies=results[0][0],
         )
         file_size = 0
         for i in r.iter_content(chunk_size=1024 * 32):
@@ -397,9 +413,16 @@ class aboutwidget(NQGroupBox):
 
 
 class delayloadsvg(QSvgWidget):
-    def __init__(self, link):
+    def __init__(self, REPO):
         super().__init__()
+        self.REPO = REPO
+        link = "https://img.shields.io/github/license/" + REPO
         self._load(link)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mouseReleaseEvent(self, _: QMouseEvent):
+        if _.button() == Qt.MouseButton.LeftButton:
+            os.startfile("https://github.com/{repo}".format(repo=self.REPO))
 
     def event(self, a0: QEvent) -> bool:
         if a0.type() == QEvent.Type.FontChange:
@@ -420,14 +443,10 @@ class delayloadsvg(QSvgWidget):
 
 
 def makelink(repo):
-    return getboxlayout(
-        [
-            functools.partial(
-                delayloadsvg, "https://img.shields.io/github/license/" + repo
-            ),
-            '<a href="https://github.com/{repo}">{repo}</a>'.format(repo=repo),
-        ]
-    )
+    return [
+        functools.partial(delayloadsvg, repo),
+        '<a href="https://github.com/{repo}">{repo}</a>'.format(repo=repo),
+    ]
 
 
 def setTab_about(self, basel):
@@ -467,31 +486,35 @@ def setTab_about(self, basel):
                     createfoldgrid,
                     [
                         [
-                            'LunaTranslator使用 <a href="https://github.com/HIllya51/LunaTranslator/blob/main/LICENSE">GPLv3</a> 许可证。',
+                            functools.partial(
+                                delayloadsvg,
+                                "HIllya51/LunaTranslator",
+                            ),
+                            '<a href="https://github.com/HIllya51/LunaTranslator">LunaTranslator</a> 使用 <a href="https://github.com/HIllya51/LunaTranslator/blob/main/LICENSE">GPLv3</a> 许可证。',
                         ],
-                        ["引用的项目", makelink("Artikash/Textractor")],
-                        ["", makelink("RapidAI/RapidOcrOnnx")],
-                        ["", makelink("PaddlePaddle/PaddleOCR")],
-                        ["", makelink("Blinue/Magpie")],
-                        ["", makelink("nanokina/ebyroid")],
-                        ["", makelink("xupefei/Locale-Emulator")],
-                        ["", makelink("InWILL/Locale_Remulator")],
-                        ["", makelink("zxyacb/ntlea")],
-                        ["", makelink("Chuyu-Team/YY-Thunks")],
-                        ["", makelink("Chuyu-Team/VC-LTL5")],
-                        ["", makelink("uyjulian/AtlasTranslate")],
-                        ["", makelink("ilius/pyglossary")],
-                        ["", makelink("ikegami-yukino/mecab")],
-                        ["", makelink("AngusJohnson/Clipper2")],
-                        ["", makelink("rapidfuzz/rapidfuzz-cpp")],
-                        ["", makelink("TsudaKageyu/minhook")],
-                        ["", makelink("lobehub/lobe-icons")],
-                        ["", makelink("kokke/tiny-AES-c")],
-                        ["", makelink("TPN-Team/OCR")],
-                        ["", makelink("AuroraWright/owocr")],
+                        [("引用的项目", -1)],
+                        makelink("Artikash/Textractor"),
+                        makelink("RapidAI/RapidOcrOnnx"),
+                        makelink("PaddlePaddle/PaddleOCR"),
+                        makelink("Blinue/Magpie"),
+                        makelink("nanokina/ebyroid"),
+                        makelink("xupefei/Locale-Emulator"),
+                        makelink("InWILL/Locale_Remulator"),
+                        makelink("zxyacb/ntlea"),
+                        makelink("Chuyu-Team/YY-Thunks"),
+                        makelink("Chuyu-Team/VC-LTL5"),
+                        makelink("uyjulian/AtlasTranslate"),
+                        makelink("ilius/pyglossary"),
+                        makelink("ikegami-yukino/mecab"),
+                        makelink("AngusJohnson/Clipper2"),
+                        makelink("rapidfuzz/rapidfuzz-cpp"),
+                        makelink("TsudaKageyu/minhook"),
+                        makelink("lobehub/lobe-icons"),
+                        makelink("kokke/tiny-AES-c"),
+                        makelink("TPN-Team/OCR"),
+                        makelink("AuroraWright/owocr"),
                     ],
                     "LICENSE",
-                    form=True,
                 )
             ],
         ],
