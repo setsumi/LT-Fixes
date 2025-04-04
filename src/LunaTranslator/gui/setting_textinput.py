@@ -1,7 +1,9 @@
 from qtsymbols import *
 import functools
-import gobject
+import gobject, os
 from myutils.config import globalconfig
+from myutils.wrapper import threader
+from myutils.utils import dynamiclink
 from textsource.texthook import codepage_display
 from traceback import print_exc
 from language import TransLanguages
@@ -193,11 +195,51 @@ def getTabclip():
 
     grids = [
         [
-            "排除复制自翻译器的文本",
-            D_getsimpleswitch(globalconfig, "excule_from_self"),
-            "",
-            "",
-        ]
+            dict(
+                title="输入",
+                grid=(
+                    [
+                        "排除复制自翻译器的文本",
+                        D_getsimpleswitch(globalconfig, "excule_from_self"),
+                    ],
+                ),
+            ),
+        ],
+        [],
+        [
+            dict(
+                title="输出",
+                grid=(
+                    [
+                        "自动输出文本",
+                        D_getsimpleswitch(
+                            globalconfig["textoutputer"]["clipboard"], "use"
+                        ),
+                    ],
+                    [
+                        dict(
+                            type="grid",
+                            title="内容",
+                            grid=(
+                                [
+                                    "原文",
+                                    D_getsimpleswitch(
+                                        globalconfig["textoutputer"]["clipboard"],
+                                        "origin",
+                                    ),
+                                    "",
+                                    "翻译",
+                                    D_getsimpleswitch(
+                                        globalconfig["textoutputer"]["clipboard"],
+                                        "trans",
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                ),
+            ),
+        ],
     ]
     return grids
 
@@ -267,66 +309,82 @@ def filetranslate(self):
     return grids
 
 
+def getpath():
+    for syspath in [
+        globalconfig["chromepath"],
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    ]:
+        if os.path.exists(syspath) and os.path.isfile(syspath):
+            return syspath
+    return None
+
+
+def open___(url):
+    chrome = getpath()
+    link = "http://127.0.0.1:{}{}".format(globalconfig["networktcpport"], url)
+    if chrome:
+        cmd = '"{}"'.format(chrome)
+        if globalconfig["chromeapp"]:
+            cmd += " --app={}".format(link)
+        threader(os.system)(cmd)
+    else:
+        os.startfile(link)
+
+
+def selectbrowser():
+    f = QFileDialog.getOpenFileName(
+        filter="*.exe", directory=os.path.dirname(getpath())
+    )
+    res = f[0]
+    globalconfig["chromepath"] = res
+
+
+def createlabellink(url):
+    l = QLabel('<a href="{}">{}</a>'.format(url, url))
+    l.linkActivated.connect(open___)
+    return l
+
+
 def outputgrid():
 
     grids = [
         [
-            dict(
-                title="输出的内容",
-                grid=(
-                    [
-                        "原文",
-                        D_getsimpleswitch(globalconfig, "textoutput_origin"),
-                    ],
-                    [
-                        "翻译",
-                        D_getsimpleswitch(globalconfig, "textoutput_trans"),
-                    ],
-                ),
+            D_getIconButton(
+                lambda: os.startfile(dynamiclink("{docs_server}/apiservice.html")),
+                "fa.question",
+            ),
+        ],
+        [
+            "开启",
+            D_getsimpleswitch(
+                globalconfig,
+                "networktcpenable",
+                callback=lambda _: gobject.baseobject.serviceinit(),
+            ),
+            "",
+            "",
+            "",
+        ],
+        [
+            "端口号",
+            D_getspinbox(
+                0,
+                65535,
+                globalconfig,
+                "networktcpport",
+                callback=lambda _: gobject.baseobject.serviceinit(),
             ),
         ],
         [],
+        [(functools.partial(createlabellink, "/"), -1)],
+        [(functools.partial(createlabellink, "/page/mainui"), -1)],
+        [(functools.partial(createlabellink, "/page/transhist"), -1)],
+        [(functools.partial(createlabellink, "/page/searchword"), -1)],
+        ["Chrome", D_getIconButton(selectbrowser)],
         [
-            dict(
-                title="剪贴板",
-                grid=(
-                    [
-                        "自动输出",
-                        D_getsimpleswitch(
-                            globalconfig["textoutputer"]["clipboard"], "use"
-                        ),
-                    ],
-                ),
-            ),
-        ],
-        [
-            dict(
-                title="WebSocket",
-                grid=(
-                    [
-                        "自动输出",
-                        D_getsimpleswitch(
-                            globalconfig["textoutputer"]["websocket"],
-                            "use",
-                            callback=lambda _: gobject.baseobject.startoutputer_re(
-                                "websocket"
-                            ),
-                        ),
-                    ],
-                    [
-                        "端口号",
-                        D_getspinbox(
-                            0,
-                            65535,
-                            globalconfig["textoutputer"]["websocket"],
-                            "port",
-                            callback=lambda _: gobject.baseobject.startoutputer_re(
-                                "websocket"
-                            ),
-                        ),
-                    ],
-                ),
-            ),
+            "APP",
+            D_getsimpleswitch(globalconfig, "chromeapp"),
         ],
     ]
     return grids
@@ -428,7 +486,7 @@ def setTabOne_lazy(self, basel: QVBoxLayout):
     ]
     gridlayoutwidget, do = makegrid(tab1grids, delay=True)
     basel.addWidget(gridlayoutwidget)
-    titles = ["HOOK设置", "OCR设置", "剪贴板", "其他", "文本输出"]
+    titles = ["HOOK设置", "OCR设置", "剪贴板", "其他", "网络服务"]
     funcs = [
         lambda l: setTabOne_lazy_h(self, l),
         lambda l: getocrgrid_table(self, l),

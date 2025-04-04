@@ -6,74 +6,23 @@ from rendertext.texttype import (
     SpecialColor,
     FenciColor,
 )
-import gobject, uuid, json, os, functools
+import gobject, hashlib, json, os, functools
 from urllib.parse import quote
 from myutils.config import globalconfig, static_data, _TR
 from myutils.wrapper import threader
 import copy
 from gui.usefulwidget import WebviewWidget
 
-testsavejs = False
 
-
-class TextBrowser(WebviewWidget, dataget):
-    contentsChanged = pyqtSignal(QSize)
-    _switchcursor = pyqtSignal(Qt.CursorShape)
-    _isDragging = pyqtSignal(bool)
-
-    def __init__(self, parent) -> None:
-        super().__init__(parent, transp=True, loadext=globalconfig["webviewLoadExt"])
-        # webview2当会执行alert之类的弹窗js时，若qt窗口不可视，会卡住
-        self.setMouseTracking(True)
-        nexti = self.add_menu(
-            0,
-            lambda: _TR("查词"),
-            threader(
-                lambda w: gobject.baseobject.searchwordW.search_word.emit(
-                    w.replace("\n", "").strip(), False
-                )
-            ),
-        )
-        nexti = self.add_menu(
-            nexti,
-            lambda: _TR("翻译"),
-            lambda w: gobject.baseobject.textgetmethod(w.replace("\n", "").strip()),
-        )
-        nexti = self.add_menu(
-            nexti,
-            lambda: _TR("朗读"),
-            lambda w: gobject.baseobject.read_text(w.replace("\n", "").strip()),
-        )
-        self.add_menu_noselect(0, lambda: _TR("清空"), self.___cleartext)
-        self.bind("calllunaclickedword", gobject.baseobject.clickwordcallback)
-        self.bind("calllunaMouseMove", self.calllunaMouseMove)
-        self.bind("calllunaMousePress", self.calllunaMousePress)
-        self.bind("calllunaMouseRelease", self.calllunaMouseRelease)
-        self.bind("calllunaheightchange", self.calllunaheightchange)
-        self.bind("calllunaEnter", self.calllunaEnter)
-        self.bind("calllunaLeave", self.calllunaLeave)
-        self.bind("calllunaloadready", self.resetflags)
-        self.set_zoom(globalconfig["ZoomFactor2"])
-        self.on_ZoomFactorChanged.connect(
-            functools.partial(globalconfig.__setitem__, "ZoomFactor2")
-        )
-        self.saveiterclasspointer = {}
-        self.isfirst = True
+class somecommon(dataget):
+    def __init__(self):
         self.colorset = set()
         self.ts_klass = {}
-        self.window().cursorSet.connect(self._switchcursor)
-        self._switchcursor.connect(self.switchcursor)
-        self.window().isDragging.connect(self._isDragging)
-        self._isDragging.connect(
-            lambda b: self.setselectable(False if b else globalconfig["selectable"])
-        )
-        self.loadex()
+        self.saveiterclasspointer = {}
 
-    def ___cleartext(self):
-        self.parent().clear()
-        gobject.baseobject.currenttext = ""
+    def debugeval(self, js: str): ...
 
-    def resetflags(self):
+    def calllunaloadready(self):
         self.colorset.clear()
         self.ts_klass.clear()
         self.setselectable(globalconfig["selectable"])
@@ -88,69 +37,15 @@ class TextBrowser(WebviewWidget, dataget):
         self.setdisplayrank(globalconfig["displayrank"])
         self.sethovercolor(globalconfig["hovercolor"])
         self.verticalhorizontal(globalconfig["verticalhorizontal"])
-        self.parent().refreshcontent()
-
-    def refreshcontent_before(self):
-        self.debugeval("refreshcontent_before()")
-
-    def refreshcontent_after(self):
-        self.debugeval("refreshcontent_after()")
-
-    def switchcursor(self, cursor):
-        cursor_map = {
-            Qt.CursorShape.ArrowCursor: "default",
-            Qt.CursorShape.UpArrowCursor: "n-resize",
-            Qt.CursorShape.CrossCursor: "crosshair",
-            Qt.CursorShape.WaitCursor: "wait",
-            Qt.CursorShape.IBeamCursor: "text",
-            Qt.CursorShape.SizeVerCursor: "ns-resize",
-            Qt.CursorShape.SizeHorCursor: "ew-resize",
-            Qt.CursorShape.SizeBDiagCursor: "nesw-resize",
-            Qt.CursorShape.SizeFDiagCursor: "nwse-resize",
-            Qt.CursorShape.SizeAllCursor: "move",
-            Qt.CursorShape.BlankCursor: "none",
-            Qt.CursorShape.SplitVCursor: "row-resize",
-            Qt.CursorShape.SplitHCursor: "col-resize",
-            Qt.CursorShape.PointingHandCursor: "pointer",
-            Qt.CursorShape.ForbiddenCursor: "not-allowed",
-            Qt.CursorShape.WhatsThisCursor: "help",
-            Qt.CursorShape.BusyCursor: "progress",
-            Qt.CursorShape.OpenHandCursor: "grab",
-            Qt.CursorShape.ClosedHandCursor: "grabbing",
-        }
-        self.eval('switchcursor("{}")'.format(cursor_map.get(cursor, "default")))
-
-    def loadex(self, extra=None):
-        if not extra:
-            extra = self.loadextra()
-            extra = extra if extra else ""
-        with open(
-            r"LunaTranslator\rendertext\webview.html", "r", encoding="utf8"
-        ) as ff:
-            html = ff.read().replace("__PLACEHOLDER_EXTRA_HTML_", extra)
-        with open(
-            r"LunaTranslator\rendertext\webview_parsed.html", "w", encoding="utf8"
-        ) as ff:
-            ff.write(html)
-        self.navigate(os.path.abspath(r"LunaTranslator\rendertext\webview_parsed.html"))
-
-    def loadextra(self):
-        if not globalconfig["useextrahtml"]:
-            return
-        for _ in [
-            "userconfig/extrahtml.html",
-            r"LunaTranslator\rendertext\exampleextrahtml.html",
-        ]:
-            if not os.path.exists(_):
-                continue
-            with open(_, "r", encoding="utf8") as ff:
-                return ff.read()
-
-    def debugeval(self, js):
-        # print(js)
-        self.eval(js)
+        gobject.baseobject.translation_ui.translate_text.refreshcontent()
 
     # js api
+    def sethovercolor(self, color):
+        self.debugeval('sethovercolor("{}")'.format(quote(color)))
+
+    def setdisplayrank(self, rank):
+        self.debugeval("setdisplayrank({})".format(int(rank)))
+
     def setselectable(self, b):
         self.debugeval("setselectable({})".format(int(b)))
 
@@ -178,108 +73,6 @@ class TextBrowser(WebviewWidget, dataget):
 
     def showhideerror(self, show):
         self.debugeval("showhideerror({})".format(int(show)))
-
-    def create_div_line_id(self, _id, texttype: TextType, klass: str):
-        args = quote(json.dumps(dict(klass=klass, texttype=texttype)))
-        self.debugeval('create_div_line_id("{}","{}")'.format(_id, args))
-
-    def clear_all(self):
-        self.debugeval("clear_all()")
-
-    def create_internal_text(self, style, styleargs, _id, name, text, args):
-        name = quote(name)
-        text = quote(text)
-        args = quote(json.dumps(args))
-        styleargs = quote(json.dumps(styleargs))
-        self.debugeval(
-            'create_internal_text("{}","{}","{}","{}","{}","{}");'.format(
-                style, styleargs, _id, name, text, args
-            )
-        )
-
-    def create_internal_rubytext(self, style, styleargs, _id, tag, args):
-        tag = quote(json.dumps(tag))
-        args = quote(json.dumps(args))
-        styleargs = quote(json.dumps(styleargs))
-        self.debugeval(
-            'create_internal_rubytext("{}","{}","{}","{}","{}");'.format(
-                style, styleargs, _id, tag, args
-            )
-        )
-
-    def calllunaheightchange(self, h):
-        self.contentsChanged.emit(
-            QSize(
-                self.width(),
-                int(h * self.get_zoom()),
-            )
-        )
-
-    def parsemousebutton(self, i):
-        btn_map = {
-            0: Qt.MouseButton.LeftButton,
-            1: Qt.MouseButton.MiddleButton,
-            2: Qt.MouseButton.RightButton,
-            3: Qt.MouseButton.BackButton,
-            4: Qt.MouseButton.ForwardButton,
-        }
-        return btn_map.get(i, Qt.MouseButton.NoButton)
-
-    def parsexyaspos(self, x, y):
-        zoom = self.get_zoom()
-        x = zoom * x
-        y = zoom * y
-        return QPointF(x, y)
-
-    def calllunaMousePress(self, btn, x, y):
-        pos = self.parsexyaspos(x, y)
-        btn = self.parsemousebutton(btn)
-        event = QMouseEvent(
-            QEvent.Type.MouseButtonPress,
-            pos,
-            btn,
-            btn,
-            Qt.KeyboardModifier.NoModifier,
-        )
-        QApplication.sendEvent(self, event)
-
-    def sethovercolor(self, color):
-        self.debugeval('sethovercolor("{}")'.format(quote(color)))
-
-    def calllunaEnter(self):
-        QApplication.sendEvent(self.window(), QEvent(QEvent.Type.Enter))
-
-    def calllunaLeave(self):
-        QApplication.sendEvent(self.window(), QEvent(QEvent.Type.Leave))
-
-    def calllunaMouseRelease(self, btn, x, y):
-        pos = self.parsexyaspos(x, y)
-        btn = self.parsemousebutton(btn)
-        event = QMouseEvent(
-            QEvent.Type.MouseButtonRelease,
-            pos,
-            btn,
-            btn,
-            Qt.KeyboardModifier.NoModifier,
-        )
-        QApplication.sendEvent(self, event)
-
-    def calllunaMouseMove(self, x, y):
-        if globalconfig["selectable"] and globalconfig["selectableEx"]:
-            return
-        pos = self.parsexyaspos(x, y)
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            pos,
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-        QApplication.sendEvent(self, event)
-
-    def resetstyle(self):
-        self.parent().refreshcontent()
-        self.setcolorstyle()
 
     # native api end
     def setfontstyle(self):
@@ -321,6 +114,34 @@ class TextBrowser(WebviewWidget, dataget):
         args = quote(json.dumps(args))
         self.debugeval('setfontstyle("{}");'.format(args))
 
+    def create_div_line_id(self, _id, texttype: TextType, klass: str):
+        args = quote(json.dumps(dict(klass=klass, texttype=texttype)))
+        self.debugeval('create_div_line_id("{}","{}")'.format(_id, args))
+
+    def clear_all(self):
+        self.debugeval("clear_all()")
+
+    def create_internal_text(self, style, styleargs, _id, name, text, args):
+        name = quote(name)
+        text = quote(text)
+        args = quote(json.dumps(args))
+        styleargs = quote(json.dumps(styleargs))
+        self.debugeval(
+            'create_internal_text("{}","{}","{}","{}","{}","{}");'.format(
+                style, styleargs, _id, name, text, args
+            )
+        )
+
+    def create_internal_rubytext(self, style, styleargs, _id, tag, args):
+        tag = quote(json.dumps(tag))
+        args = quote(json.dumps(args))
+        styleargs = quote(json.dumps(styleargs))
+        self.debugeval(
+            'create_internal_rubytext("{}","{}","{}","{}","{}");'.format(
+                style, styleargs, _id, tag, args
+            )
+        )
+
     def iter_append(
         self,
         iter_context_class,
@@ -340,24 +161,15 @@ class TextBrowser(WebviewWidget, dataget):
 
     def createtextlineid(self, texttype: TextType, klass: str):
         self.setfontextra(klass)
-        _id = "luna_{}".format(uuid.uuid4())
+        _id = "luna_{}".format(
+            hashlib.sha256((str(texttype) + str(klass)).encode()).hexdigest()
+        )
         self.create_div_line_id(_id, texttype, klass)
         return _id
-
-    def setdisplayrank(self, rank):
-        self.debugeval("setdisplayrank({})".format(int(rank)))
 
     def append(self, texttype: TextType, name, text, tag, color: ColorControl, klass):
         _id = self.createtextlineid(texttype, klass)
         self._webview_append(_id, name, text, tag, color)
-
-    def measureH(self, font_family, font_size, bold):
-        font = QFont()
-        font.setFamily(font_family)
-        font.setPointSizeF(font_size)
-        font.setBold(bold)
-        fmetrics = QFontMetricsF(font)
-        return fmetrics.height()
 
     def _getstylevalid(self):
         currenttype = globalconfig["rendertext_using_internal"]["webview"]
@@ -367,30 +179,6 @@ class TextBrowser(WebviewWidget, dataget):
                 "textrender"
             ]["webview"][0]
         return currenttype
-
-    def setcolorstyle(self, _=None):
-        mp = {}
-        for color in self.colorset:
-            mp[color.asklass()] = color.get()
-        style = self._getstylevalid()
-        styleargs = globalconfig["rendertext"]["webview"][style].get("args", {})
-        infos = dict(color=mp, style=style, styleargs=styleargs)
-        self.debugeval("setcolorstyle('{}')".format(quote(json.dumps(infos))))
-
-    def _setcolors(self, color: ColorControl = None):
-        if color in self.colorset:
-            return
-        self.colorset.add(color)
-        self.setcolorstyle()
-
-    def setfontextra(self, klass: str):
-        if not klass:
-            return
-        curr = copy.deepcopy(globalconfig["fanyi"][klass].get("privatefont", {}))
-        if curr == self.ts_klass.get(klass, None):
-            return
-        self.ts_klass[klass] = curr
-        self.setfontstyle()
 
     def _webview_append(self, _id, name, text: str, tag, color: ColorControl):
         self._setcolors(color)
@@ -421,6 +209,222 @@ class TextBrowser(WebviewWidget, dataget):
 
         self.clear_all()
         self.saveiterclasspointer.clear()
+
+    def _setcolors(self, color: ColorControl = None):
+        if color in self.colorset:
+            return
+        self.colorset.add(color)
+        self.setcolorstyle()
+
+    def setcolorstyle(self, _=None):
+        mp = {}
+        for color in self.colorset:
+            mp[color.asklass()] = color.get()
+        style = self._getstylevalid()
+        styleargs = globalconfig["rendertext"]["webview"][style].get("args", {})
+        infos = dict(color=mp, style=style, styleargs=styleargs)
+        self.debugeval("setcolorstyle('{}')".format(quote(json.dumps(infos))))
+
+    def setfontextra(self, klass: str):
+        if not klass:
+            return
+        curr = copy.deepcopy(globalconfig["fanyi"][klass].get("privatefont", {}))
+        if curr == self.ts_klass.get(klass, None):
+            return
+        self.ts_klass[klass] = curr
+        self.setfontstyle()
+
+    def resetstyle(self):
+        gobject.baseobject.translation_ui.translate_text.refreshcontent()
+        self.setcolorstyle()
+
+
+
+class TextBrowser(WebviewWidget, somecommon):
+    contentsChanged = pyqtSignal(QSize)
+    _switchcursor = pyqtSignal(Qt.CursorShape)
+    _isDragging = pyqtSignal(bool)
+
+    def __init__(self, parent) -> None:
+        super().__init__(parent, transp=True, loadext=globalconfig["webviewLoadExt"])
+        # webview2当会执行alert之类的弹窗js时，若qt窗口不可视，会卡住
+        self.setMouseTracking(True)
+        nexti = self.add_menu(
+            0,
+            lambda: _TR("查词"),
+            threader(
+                lambda w: gobject.baseobject.searchwordW.search_word.emit(
+                    w.replace("\n", "").strip(), False
+                )
+            ),
+        )
+        nexti = self.add_menu(
+            nexti,
+            lambda: _TR("翻译"),
+            lambda w: gobject.baseobject.textgetmethod(w.replace("\n", "").strip()),
+        )
+        nexti = self.add_menu(
+            nexti,
+            lambda: _TR("朗读"),
+            lambda w: gobject.baseobject.read_text(w.replace("\n", "").strip()),
+        )
+        self.add_menu_noselect(0, lambda: _TR("清空"), self.___cleartext)
+        self.bind("calllunaclickedword", gobject.baseobject.clickwordcallback)
+        self.bind("calllunaMouseMove", self.calllunaMouseMove)
+        self.bind("calllunaMousePress", self.calllunaMousePress)
+        self.bind("calllunaMouseRelease", self.calllunaMouseRelease)
+        self.bind("calllunaheightchange", self.calllunaheightchange)
+        self.bind("calllunaEnter", self.calllunaEnter)
+        self.bind("calllunaLeave", self.calllunaLeave)
+        self.bind("calllunaloadready", self.calllunaloadready)
+        self.set_zoom(globalconfig["ZoomFactor2"])
+        self.on_ZoomFactorChanged.connect(
+            functools.partial(globalconfig.__setitem__, "ZoomFactor2")
+        )
+        self.isfirst = True
+        self.window().cursorSet.connect(self._switchcursor)
+        self._switchcursor.connect(self.switchcursor)
+        self.window().isDragging.connect(self._isDragging)
+        self._isDragging.connect(
+            lambda b: self.setselectable(False if b else globalconfig["selectable"])
+        )
+        self.loadex()
+
+    def ___cleartext(self):
+        self.parent().clear()
+        gobject.baseobject.currenttext = ""
+
+    def refreshcontent_before(self):
+        self.debugeval("refreshcontent_before()")
+
+    def refreshcontent_after(self):
+        self.debugeval("refreshcontent_after()")
+
+    def switchcursor(self, cursor):
+        cursor_map = {
+            Qt.CursorShape.ArrowCursor: "default",
+            Qt.CursorShape.UpArrowCursor: "n-resize",
+            Qt.CursorShape.CrossCursor: "crosshair",
+            Qt.CursorShape.WaitCursor: "wait",
+            Qt.CursorShape.IBeamCursor: "text",
+            Qt.CursorShape.SizeVerCursor: "ns-resize",
+            Qt.CursorShape.SizeHorCursor: "ew-resize",
+            Qt.CursorShape.SizeBDiagCursor: "nesw-resize",
+            Qt.CursorShape.SizeFDiagCursor: "nwse-resize",
+            Qt.CursorShape.SizeAllCursor: "move",
+            Qt.CursorShape.BlankCursor: "none",
+            Qt.CursorShape.SplitVCursor: "row-resize",
+            Qt.CursorShape.SplitHCursor: "col-resize",
+            Qt.CursorShape.PointingHandCursor: "pointer",
+            Qt.CursorShape.ForbiddenCursor: "not-allowed",
+            Qt.CursorShape.WhatsThisCursor: "help",
+            Qt.CursorShape.BusyCursor: "progress",
+            Qt.CursorShape.OpenHandCursor: "grab",
+            Qt.CursorShape.ClosedHandCursor: "grabbing",
+        }
+        self.eval('switchcursor("{}")'.format(cursor_map.get(cursor, "default")))
+
+    def loadex(self, extra=None):
+        self.navigate(self.loadex_(extra=extra))
+
+    @staticmethod
+    def loadex_(extra=None):
+        if not extra:
+            extra = TextBrowser.loadextra()
+            extra = extra if extra else ""
+        with open(
+            r"LunaTranslator\rendertext\webview.html", "r", encoding="utf8"
+        ) as ff:
+            html = ff.read().replace("__PLACEHOLDER_EXTRA_HTML_", extra)
+        with open(
+            r"LunaTranslator\rendertext\webview_parsed.html", "w", encoding="utf8"
+        ) as ff:
+            ff.write(html)
+        return os.path.abspath(r"LunaTranslator\rendertext\webview_parsed.html")
+
+    @staticmethod
+    def loadextra():
+        if not globalconfig["useextrahtml"]:
+            return
+        for _ in [
+            "userconfig/extrahtml.html",
+            r"files\static\extrahtml\mainui.html",
+        ]:
+            if not os.path.exists(_):
+                continue
+            with open(_, "r", encoding="utf8") as ff:
+                return ff.read()
+
+    def debugeval(self, js):
+        # print(js)
+        self.eval(js)
+
+    def calllunaheightchange(self, h):
+        self.contentsChanged.emit(
+            QSize(
+                self.width(),
+                int(h * self.get_zoom()),
+            )
+        )
+
+    def parsemousebutton(self, i):
+        btn_map = {
+            0: Qt.MouseButton.LeftButton,
+            1: Qt.MouseButton.MiddleButton,
+            2: Qt.MouseButton.RightButton,
+            3: Qt.MouseButton.BackButton,
+            4: Qt.MouseButton.ForwardButton,
+        }
+        return btn_map.get(i, Qt.MouseButton.NoButton)
+
+    def parsexyaspos(self, x, y):
+        zoom = self.get_zoom()
+        x = zoom * x
+        y = zoom * y
+        return QPointF(x, y)
+
+    def calllunaMousePress(self, btn, x, y):
+        pos = self.parsexyaspos(x, y)
+        btn = self.parsemousebutton(btn)
+        event = QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            pos,
+            btn,
+            btn,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        QApplication.sendEvent(self, event)
+
+    def calllunaEnter(self):
+        QApplication.sendEvent(self.window(), QEvent(QEvent.Type.Enter))
+
+    def calllunaLeave(self):
+        QApplication.sendEvent(self.window(), QEvent(QEvent.Type.Leave))
+
+    def calllunaMouseRelease(self, btn, x, y):
+        pos = self.parsexyaspos(x, y)
+        btn = self.parsemousebutton(btn)
+        event = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            pos,
+            btn,
+            btn,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        QApplication.sendEvent(self, event)
+
+    def calllunaMouseMove(self, x, y):
+        if globalconfig["selectable"] and globalconfig["selectableEx"]:
+            return
+        pos = self.parsexyaspos(x, y)
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            pos,
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        QApplication.sendEvent(self, event)
 
     def GetSelectedText(self):
         ret = []

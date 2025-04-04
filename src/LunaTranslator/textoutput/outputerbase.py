@@ -8,7 +8,11 @@ class Base:
     def config(self):
         return globalconfig["textoutputer"][self.classname]
 
-    def dispatch(self, text):
+    @property
+    def using(self):
+        return self.config["use"]
+
+    def dispatch(self, text:str, isorigin:bool):
         pass
 
     def init(self):
@@ -22,8 +26,10 @@ class Base:
 
     def dothread(self):
         while True:
-            text = self.queue.get()
-            self.dispatch(text)
+            text, isorigin = self.queue.get()
+            self.dispatch(text, isorigin)
 
-    def puttask(self, text):
-        self.queue.put(text)
+    def puttask(self, text, isorigin):
+        if not self.using:
+            return
+        self.queue.put((text, isorigin))

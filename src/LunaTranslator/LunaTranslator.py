@@ -54,6 +54,8 @@ from gui.dynalang import LAction
 from gui.setting_textinput_ocr import showocrimage
 from gui.usefulwidget import PopupWidget
 from rendertext.texttype import TextType, SpecialColor, TranslateColor
+from services.servicecollection import registerall
+from services.tcpservice import TCPService
 
 
 class MAINUI:
@@ -90,6 +92,14 @@ class MAINUI:
         self.autoswitchgameuid = True
         self.istriggertoupdate = False
         self.thishastranslated = True
+        self.service = TCPService()
+        registerall(self.service)
+
+    @threader
+    def serviceinit(self):
+        self.service.stop()
+        if globalconfig["networktcpenable"]:
+            self.service.init(globalconfig["networktcpport"])
 
     @threader
     def ttsautoforward(self):
@@ -373,8 +383,7 @@ class MAINUI:
                     text = self.readcurrent(needresult=True)
                 else:
                     self.readcurrent()
-            if globalconfig["textoutput_origin"]:
-                self.dispatchoutputer(text)
+            self.dispatchoutputer(text, True)
 
             _showrawfunction_unsafe = functools.partial(
                 self.translation_ui.displayraw1.emit, text
@@ -615,8 +624,7 @@ class MAINUI:
                         self.readcurrent()
                         read_trans_once_check.append(classname)
 
-                    if globalconfig["textoutput_trans"]:
-                        self.dispatchoutputer(res)
+                    self.dispatchoutputer(res, False)
                 try:
                     self.textsource.sqlqueueput((contentraw, classname, res))
                 except:
@@ -870,10 +878,6 @@ class MAINUI:
                 print_exc()
 
     @threader
-    def startoutputer_re(self, klass):
-        self.outputers[klass].init()
-
-    @threader
     def startoutputer(self):
         for classname in globalconfig["textoutputer"]:
             if not os.path.exists("./LunaTranslator/textoutput/" + classname + ".py"):
@@ -881,10 +885,9 @@ class MAINUI:
             aclass = importlib.import_module("textoutput." + classname).Outputer
             self.outputers[classname] = aclass(classname)
 
-    def dispatchoutputer(self, text):
-        for _, kls in self.outputers.items():
-            if kls.config["use"]:
-                kls.puttask(text)
+    def dispatchoutputer(self, text, isorigin):
+        for kls in self.outputers.values():
+            kls.puttask(text, isorigin)
 
     def fanyiinitmethod(self, classname):
         try:
@@ -1287,6 +1290,7 @@ class MAINUI:
         self.inittray()
         self.playtimemanager = playtimemanager()
         self.urlprotocol()
+        self.serviceinit()
 
     def WinEventHookCALLBACK(self, event, hwnd, idObject):
         try:

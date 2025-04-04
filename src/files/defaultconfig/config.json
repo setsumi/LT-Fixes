@@ -273,13 +273,15 @@
             "https://vndb.org/"
         ]
     ],
+    "chromeapp": true,
+    "chromepath": "",
+    "networktcpport": 2333,
+    "networktcpenable": false,
     "textoutputer": {
         "clipboard": {
-            "use": false
-        },
-        "websocket": {
             "use": false,
-            "port": 2333
+            "origin": true,
+            "trans": false
         }
     },
     "embedded": {
@@ -1497,6 +1499,11 @@
             "name": "WindowsOCR",
             "type": "offline"
         },
+        "SnippingTool": {
+            "use": false,
+            "name": "SnippingTool",
+            "type": "offline"
+        },
         "tesseract5": {
             "use": false,
             "name": "Tesseract5",
@@ -1910,8 +1917,6 @@
     "autoupdate": true,
     "proxies": null,
     "viewlistpos": 0,
-    "textoutput_origin": true,
-    "textoutput_trans": false,
     "wordlabel": [],
     "getWordFallbackClipboard": true,
     "verticalhorizontal": false,
