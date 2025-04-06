@@ -179,7 +179,22 @@ https://ocr.space/
 
 ::: tabs
 
+== ローカルOCR
+
+日本語認識モデルが組み込まれています。
+
+他の言語を認識する必要がある場合は、`リソースダウンロード`で対応する言語の認識モデルを追加してください。
+
+== SnippingTool
+
+最新版のWindows 11システムであれば直接使用できます。
+
+それ以外の場合は、`リソースダウンロードで`このモジュールをインストールする必要があります。
+
 == manga-ocr
+
+>[!WARNING]
+>このOCRエンジンは横書きテキストの認識に不向きです。
 
 CPU統合パッケージ https://lunatranslator.org/Resource/IntegrationPack/manga_ocr/cpu
 
@@ -191,10 +206,10 @@ WeChatまたは最新バージョンのQQのインストールが必要です
 
 == WindowsOCR
 
-### WindowsOCRの追加言語サポートをインストールする方法
-
 >[!WARNING]
 > WindowsOCRはWindows 10およびWindows 11オペレーティングシステムのみをサポートしています。
+
+### WindowsOCRの追加言語サポートをインストールする方法
 
 #### OCR 言語パックのクエリを実行する方法
 
@@ -246,6 +261,9 @@ $Capability | Remove-WindowsCapability -Online
 https://learn.microsoft.com/ja-jp/windows/powertoys/text-extractor#supported-languages
 
 == Tesseract5
+
+>[!WARNING]
+>性能が低すぎるため、使用は推奨されません。
 
 https://github.com/tesseract-ocr/tesseract/releases
 
