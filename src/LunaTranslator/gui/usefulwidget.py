@@ -2851,27 +2851,42 @@ class pixmapviewer(QWidget):
                         pen.setColor(QColor(globalconfig["rawtextcolor"]))
                         painter.setFont(font)
                         painter.setPen(pen)
-                        for i in range(len(boxs)):
-                            painter.drawText(
-                                QPointF(parsex(boxs[i][0]), parsey(boxs[i][1])),
-                                texts[i],
+                        if not boxs:
+                            self.drawTextLines(
+                                QPointF(0, parsey(0)), painter, texts
                             )
-                            for j in range(len(boxs[i]) // 2):
-                                painter.drawLine(
-                                    QPointF(
-                                        parsex(boxs[i][j * 2]),
-                                        parsey(boxs[i][j * 2 + 1]),
-                                    ),
-                                    QPointF(
-                                        parsex(boxs[i][(j * 2 + 2) % len(boxs[i])]),
-                                        parsey(boxs[i][(j * 2 + 3) % len(boxs[i])]),
-                                    ),
+                        else:
+                            for i in range(len(boxs)):
+                                painter.drawText(
+                                    QPointF(parsex(boxs[i][0]), parsey(boxs[i][1])),
+                                    texts[i],
                                 )
+                                for j in range(len(boxs[i]) // 2):
+                                    painter.drawLine(
+                                        QPointF(
+                                            parsex(boxs[i][j * 2]),
+                                            parsey(boxs[i][j * 2 + 1]),
+                                        ),
+                                        QPointF(
+                                            parsex(boxs[i][(j * 2 + 2) % len(boxs[i])]),
+                                            parsey(boxs[i][(j * 2 + 3) % len(boxs[i])]),
+                                        ),
+                                    )
                     except:
                         print_exc()
             painter = QPainter(self)
             painter.drawPixmap(0, 0, self._pix)
         return super().paintEvent(e)
+
+    def drawTextLines(self, pos: QPointF, painter: QPainter, lines):
+
+        font_metrics = painter.fontMetrics()
+        line_height = font_metrics.height()
+
+        pos.setY(pos.y() + line_height)
+        for line in lines:
+            painter.drawText(QPointF(pos.x(), pos.y()), line)
+            pos.setY(pos.y() + line_height)
 
 
 class IconButton(QPushButton):
