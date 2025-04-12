@@ -254,6 +254,7 @@ class OcrLineBoundingBox(Structure):
 
 class OCR(baseocr):
     required_image_format = QImage
+    required_mini_height = 50
 
     def init(self):
 
@@ -334,7 +335,6 @@ class OCR(baseocr):
                 box = OcrLineBoundingBox.from_buffer_copy(
                     windows.ReadFile(self.hPipe, 32)
                 )
-                boxs.append(
-                    (box.x1, box.y1, box.x2, box.y2, box.x3, box.y3, box.x4, box.y4)
-                )
+                box = (box.x1, box.y1, box.x2, box.y2, box.x3, box.y3, box.x4, box.y4)
+                boxs.append(box)
             return OCRResult(boxs=boxs, texts=texts)
