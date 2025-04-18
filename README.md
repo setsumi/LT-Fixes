@@ -21,4 +21,4 @@
 LunaTranslator: https://github.com/setsumi/LT-Fixes/releases \
 LunaHook: https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true
 
-Legacy LunaHook v5.0.0: https://github.com/setsumi/LunaHook/releases
+Legacy LunaHook v5.0.0 + Plugins: https://github.com/setsumi/LunaHook/releases
