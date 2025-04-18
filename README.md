@@ -14,6 +14,7 @@
 - Keep `--remote-allow-origins=* --disable-gpu` in browser translation (DeepL CDP) (v7.18.8.1 and later)
 - **\[note\]** To use portable Webview2 set environment variable `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER=C:\portable\webview2`
 - Added tray tooltip (v7.23.3.3 and later)
+- Restored LunaHook plugin support (v8.7.1.1 and later)
 
 ### Download
 
