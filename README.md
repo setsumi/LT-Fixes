@@ -15,6 +15,7 @@
 - **\[note\]** To use portable Webview2 set environment variable `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER=C:\portable\webview2`
 - Added tray tooltip (v7.23.3.3 and later)
 - **\[important\]** Restored LunaHook plugin support (v8.7.1.1 and later)
+- **\[upstream\]** Removed LunaHook CLI (v9.0.0.2 and later)
 
 ### Download
 
