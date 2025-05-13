@@ -1103,6 +1103,7 @@ class MAINUI:
                 "",
                 lambda: os.startfile(dynamiclink(docs=True)),
             )
+            self.settin_ui.show()
         elif version != tuple(globalconfig["load_doc_or_log"]):
             vs = ".".join(str(_) for _ in version)
             if vs.endswith(".0"):
