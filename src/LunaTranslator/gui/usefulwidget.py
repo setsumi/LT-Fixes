@@ -883,11 +883,16 @@ def D_getspinbox(mini, maxi, d, key, double=False, step=1, callback=None, defaul
 
 
 def getIconButton(
-    callback=None, icon="fa.gear", enable=True, qicon=None, callback2=None, fix=True
+    callback=None,
+    icon="fa.gear",
+    enable=True,
+    qicon=None,
+    callback2=None,
+    fix=True,
+    tips=None,
 ):
 
-    b = IconButton(icon, enable, qicon, fix=fix)
-
+    b = IconButton(icon, enable, qicon, fix=fix, tips=tips)
     if callback:
         b.clicked_1.connect(callback)
     if callback2:
@@ -897,10 +902,16 @@ def getIconButton(
 
 
 def D_getIconButton(
-    callback=None, icon="fa.gear", enable=True, qicon=None, callback2=None, fix=True
+    callback=None,
+    icon="fa.gear",
+    enable=True,
+    qicon=None,
+    callback2=None,
+    fix=True,
+    tips=None,
 ):
     return lambda: getIconButton(
-        callback, icon, enable, qicon, callback2=callback2, fix=fix
+        callback, icon, enable, qicon, callback2=callback2, fix=fix, tips=tips
     )
 
 
@@ -2845,7 +2856,7 @@ class pixmapviewer(QWidget):
             pos.setY(pos.y() + line_height)
 
 
-class IconButton(QPushButton):
+class IconButton(LPushButton):
     clicked_1 = pyqtSignal()
     sizeChanged = pyqtSignal(QSize)
 
@@ -2867,9 +2878,18 @@ class IconButton(QPushButton):
         self.sizeChanged.emit(sz)
 
     def __init__(
-        self, icon, enable=True, qicon=None, parent=None, checkable=False, fix=True
+        self,
+        icon,
+        enable=True,
+        qicon=None,
+        parent=None,
+        checkable=False,
+        fix=True,
+        tips=None,
     ):
         super().__init__(parent)
+        if tips:
+            self.setToolTip(tips)
         self._icon = icon
         self.clicked.connect(self.clicked_1)
         self.clicked.connect(self.__seticon)
