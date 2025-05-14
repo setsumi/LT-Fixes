@@ -32,5 +32,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
-      - run: |
-          curl --request GET --url https://lunatranslator.org/githubupdatenotify --header 'updatenotifytoken: ${{ secrets.updatenotifytoken }}'
