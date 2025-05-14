@@ -126,11 +126,11 @@ export const zh = defineConfig({
                     },
                     { text: '语音合成', link: '/zh/ttsofname' },
                     {
-                        text: '分词&辞书', link: '/zh/qa1',
+                        text: '分词&辞书&Anki', link: '/zh/qa1',
                         collapsed: true,
                         items: [
                             { text: '使用Mecab分词&词性颜色标注', link: '/zh/qa1' },
-                            { text: 'Anki集成', link: '/zh/qa2' }
+                            { text: 'Anki集成', link: '/zh/qa2' },
                         ]
                     },
                     { text: '工具按钮', link: '/zh/alltoolbuttons' },
