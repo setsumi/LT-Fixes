@@ -3,19 +3,27 @@ import platform
 import sys
 from importanalysis import importanalysis
 
-x86 = platform.architecture()[0] == "32bit"
-if sys.argv[1] == "32":
-    targetdir = r"build\LunaTranslator_x86"
-    launch = "../src/cpp/builds/_x86"
+arch = sys.argv[1]
+target = sys.argv[2]
+
+if target == "xp":
+    os.system("python scripts/generate_xp_code.py")
+    os.system("git clone --depth 1 https://github.com/HIllya51/py3.4_pyqt5.5.1")
+    os.rename("py3.4_pyqt5.5.1/Python34", "runtime")
+
+    pyrt = "runtime"
+else:
+    pyrt = f"../build/pyrt_{arch}_{target}/runtime"
+launch = f"../src/cpp/builds/_{arch}"
+targetdir = rf"build\LunaTranslator_{arch}"
+if target == "win10":
+    targetdir += "_win10"
+elif target == "xp":
+    targetdir += "_winxp"
+if arch == "x86":
     baddll = "DLL64"
-    pyrt = "../build/pyrt_x86/runtime"
-    downlevel = r"C:\Windows\SysWOW64\downlevel"
 else:
     baddll = "DLL32"
-    launch = "../src/cpp/builds/_x64"
-    targetdir = r"build\LunaTranslator"
-    pyrt = "../build/pyrt_x64/runtime"
-    downlevel = r"C:\Windows\system32\downlevel"
 
 
 def copycheck(src, tgt):
@@ -57,8 +65,8 @@ collect = []
 for _dir, _, fs in os.walk(targetdir):
     for f in fs:
         collect.append(os.path.join(_dir, f))
-
-collectapisets = set()
+if target in ("win10", "xp"):
+    collect.clear()
 for f in collect:
     if f.endswith(".pyc") or f.endswith("Thumbs.db"):
         os.remove(f)
@@ -81,11 +89,14 @@ for f in collect:
                 "api-ms-win-core-path-l1-1-0.dll",
             ):
                 continue
-            elif low=='api-ms-win-core-com-l1-1-0.dll':
-                _target='Ole32.dll'
+            elif low == "api-ms-win-core-com-l1-1-0.dll":
+                _target = "Ole32.dll"
             elif low == "api-ms-win-core-shlwapi-legacy-l1-1-0.dll":
                 _target = "Shlwapi.dll"
-            elif low in ("api-ms-win-eventing-provider-l1-1-0.dll", "api-ms-win-security-base-l1-1-0.dll"):
+            elif low in (
+                "api-ms-win-eventing-provider-l1-1-0.dll",
+                "api-ms-win-security-base-l1-1-0.dll",
+            ):
                 _target = "Advapi32.dll"
             elif low in ("api-ms-win-ntuser-sysparams-l1-1-0.dll",):
                 _target = "User32.dll"
@@ -105,10 +116,7 @@ for f in collect:
             # print(len(bs))
         with open(f, "wb") as ff:
             ff.write(bs)
-#         for _dll, _ in imports:
-#             collectapisets.add(_dll)
-# for api in collectapisets:
-#     copycheck(rf"{downlevel}\{api}", targetdir + "/files/runtime")
+
 target = os.path.basename(targetdir)
 os.chdir(os.path.dirname(targetdir))
 if os.path.exists(rf"{target}.zip"):
