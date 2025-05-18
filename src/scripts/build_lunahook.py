@@ -65,7 +65,7 @@ elif sys.argv[1] == "build":
         if target == "win10"
         else (" -DWINXP=ON " if target == "xp" else "")
     )
-    config += " -DBUILD_PLUGIN=ON "
+    config += " -DBUILD_PLUGIN=OFF "
     if not core:
         config += " -DBUILD_GUI=ON "
 
