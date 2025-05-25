@@ -1488,7 +1488,7 @@
     "usecopyword": false,
     "wordclickkbtriggerneed": {},
     "wordclickkbtrigger": {},
-    "usewordorigin": false,
+    "usewordoriginfor": {},
     "ttscommon": {
         "rate": 0,
         "pitch": 0,
@@ -1942,5 +1942,6 @@
     "getWordFallbackClipboard": true,
     "verticalhorizontal": false,
     "noundictconfig_ex": [],
-    "toppest_translator": null
+    "toppest_translator": null,
+    "range_select_multi_dpi_capture_force": false
 }

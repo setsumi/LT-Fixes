@@ -564,7 +564,7 @@ CreateAutoKillProcess.restype = AutoHandle
 
 class _AutoKillProcess:
     def __init__(self, handle, pid):
-        self.handle = handle
+        self._refkep = handle
         self.pid = pid
 
 
@@ -685,8 +685,8 @@ GetParentProcessID.argtypes = (DWORD,)
 GetParentProcessID.restype = DWORD
 MouseMoveWindow = utilsdll.MouseMoveWindow
 MouseMoveWindow.argtypes = (HWND,)
-NeedUseSysMove = utilsdll.NeedUseSysMove
-NeedUseSysMove.restype = c_bool
+IsMultiDifferentDPI = utilsdll.IsMultiDifferentDPI
+IsMultiDifferentDPI.restype = c_bool
 
 AdaptersServiceUninitialize = utilsdll.AdaptersServiceUninitialize
 AdaptersServiceStartMonitor_Callback = CFUNCTYPE(None)
