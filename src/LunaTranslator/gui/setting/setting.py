@@ -11,12 +11,9 @@ from gui.setting.cishu import setTabcishu
 from gui.setting.hotkey import setTab_quick, registrhotkeys
 from gui.setting.proxy import setTab_proxy
 from gui.setting.transopti import setTab7_lazy, delaysetcomparetext
-from gui.setting.about import (
-    setTab_about,
-    versionlabelmaybesettext,
-    versioncheckthread,
-)
+from gui.setting.about import setTab_about, versionlabelmaybesettext, versioncheckthread
 from gui.dynalang import LListWidgetItem, LListWidget
+from gui.flowsearchword import WordViewTooltip
 
 
 class TabWidget(QWidget):
@@ -84,13 +81,15 @@ class TabWidget(QWidget):
 
 
 class Setting(closeashidewindow):
+    hover_search_word = pyqtSignal(str, str, bool, bool, bool)
+    hover_search_word_checkpos = pyqtSignal()
     voicelistsignal = pyqtSignal(object)
     versiontextsignal = pyqtSignal(str)
     progresssignal2 = pyqtSignal(str, int)
     progresssignal4 = pyqtSignal(str, int)
     progresssignal3 = pyqtSignal(int)
     showandsolvesig = pyqtSignal(str, str)
-    safeinvokefunction = pyqtSignal(list)
+    safeinvokefunction = pyqtSignal(object)
     thresholdsett2 = pyqtSignal(str)
     thresholdsett1 = pyqtSignal(str)
     portconflict = pyqtSignal(str)
@@ -109,7 +108,7 @@ class Setting(closeashidewindow):
         self.setWindowIcon(qtawesome.icon("fa.gear"))
         self.portconflictcache = []
         self.portconflict.connect(self.portconflictcache.append)
-        self.safeinvokefunction.connect(lambda _: _[0]())
+        self.safeinvokefunction.connect(lambda _: _())
         self.progresssignal4.connect(self._progresssignal4)
         self.showandsolvesig.connect(functools.partial(delaysetcomparetext, self))
         self.voicelistsignal.connect(functools.partial(showvoicelist, self))
@@ -119,6 +118,8 @@ class Setting(closeashidewindow):
         self.isfirst = True
         versioncheckthread(self)
         registrhotkeys(self)
+        self._WordViewer = WordViewTooltip(self)
+        self.hover_search_word.connect(self._WordViewer.searchword)
 
     def showEvent(self, e: QShowEvent):
         if self.isfirst:

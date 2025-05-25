@@ -14,6 +14,8 @@ from gui.usefulwidget import (
     D_getIconButton_mousefollow,
     getIconButton,
     D_getsimpleswitch,
+    getcenterX,
+    getboxlayout,
     makescrollgrid,
     makesubtab_lazy,
 )
@@ -70,7 +72,8 @@ def setTab7_lazy(self, basel: QLayout):
             "",
             "",
             "",
-            ("调整执行顺序", 6),
+            getcenterX("调整执行顺序"),
+            ("", 5),
         ]
     ]
     for k in postprocessconfig:
@@ -180,8 +183,17 @@ def setTab7_lazy(self, basel: QLayout):
             D_getsimpleswitch(postprocessconfig[post], "use"),
             config,
             "",
-            button_up,
-            button_down,
+            getcenterX(
+                getboxlayout(
+                    [
+                        "",
+                        button_up,
+                        button_down,
+                        "",
+                    ]
+                ),
+                widget=True,
+            ),
         ]
         grids.append(l)
     grids2 = [
@@ -208,7 +220,7 @@ def setTab7_lazy(self, basel: QLayout):
             if setting:
                 kwarg = dict(callback=functools.partial(__, setting, self))
                 if name == "myprocess":
-                    kwarg.update(dict(icon="fa.edit"))
+                    kwarg.update(icon="fa.edit")
                 grids2[-1].append(D_getIconButton(**kwarg))
     grids2 += [[("", 15)]]
 

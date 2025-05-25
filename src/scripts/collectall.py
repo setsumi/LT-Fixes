@@ -6,25 +6,23 @@ from importanalysis import importanalysis
 arch = sys.argv[1]
 target = sys.argv[2]
 
-if target == "xp":
+if target == "winxp":
     os.system("python scripts/generate_xp_code.py")
     os.system("git clone --depth 1 https://github.com/HIllya51/py3.4_pyqt5.5.1")
     os.rename("py3.4_pyqt5.5.1/Python34", "runtime")
-
     pyrt = "runtime"
 else:
     pyrt = f"../build/pyrt_{arch}_{target}/runtime"
 launch = f"../src/cpp/builds/_{arch}"
-targetdir = rf"build\LunaTranslator_{arch}"
-if target == "win10":
-    targetdir += "_win10"
-elif target == "xp":
-    targetdir += "_winxp"
+launch+=  f"_{target}"
+targetdir = rf"build\LunaTranslator_{arch}_{target}"
+
 if arch == "x86":
     baddll = "DLL64"
 else:
     baddll = "DLL32"
 
+os.makedirs(targetdir, exist_ok=True)
 
 def copycheck(src, tgt):
     print(src, tgt, os.path.exists(src))
@@ -56,7 +54,7 @@ copycheck("./LunaTranslator", targetdir)
 copycheck(r".\files", targetdir)
 copycheck(pyrt, targetdir + "/files")
 try:
-    shutil.rmtree(rf"{targetdir}\files\plugins\{baddll}")
+    shutil.rmtree(rf"{targetdir}\files\{baddll}")
 except:
     pass
 shutil.copy(r"..\LICENSE", targetdir)
@@ -65,7 +63,7 @@ collect = []
 for _dir, _, fs in os.walk(targetdir):
     for f in fs:
         collect.append(os.path.join(_dir, f))
-if target in ("win10", "xp"):
+if target in ("win10", "winxp"):
     collect.clear()
 for f in collect:
     if f.endswith(".pyc") or f.endswith("Thumbs.db"):
@@ -83,7 +81,7 @@ for f in collect:
         for _dll, offset in imports:
             low = _dll.lower()
             if low in (
-                "api-ms-win-core-synch-l1-2-0.dll",
+                # "api-ms-win-core-synch-l1-2-0.dll",
                 "api-ms-win-core-winrt-string-l1-1-0.dll",
                 "api-ms-win-core-winrt-l1-1-0.dll",
                 "api-ms-win-core-path-l1-1-0.dll",

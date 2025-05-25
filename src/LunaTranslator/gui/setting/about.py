@@ -2,7 +2,7 @@ from qtsymbols import *
 import functools
 import NativeUtils, queue, hashlib, threading
 from myutils.config import globalconfig, static_data, _TR
-from gobject import is_xp, is_bit_64
+from gobject import runtime_for_xp, runtime_bit_64, runtime_for_win10
 from myutils.wrapper import threader, tryprint, trypass
 from myutils.hwnd import getcurrexe
 from myutils.utils import makehtml, getlanguse, dynamiclink
@@ -20,6 +20,7 @@ from gui.usefulwidget import (
     D_getIconButton,
     getsmalllabel,
     getboxlayout,
+    MDLabel,
     NQGroupBox,
     VisLFormLayout,
     clearlayout,
@@ -80,11 +81,13 @@ def trygetupdate():
             version, links = tryqueryfromgithub()
         except:
             return None
-    bit = ("x86", "x64")[is_bit_64]
-    if is_xp:
+    bit = ("x86", "x64")[runtime_bit_64]
+    if runtime_for_xp:
         bit += "_winxp"
-    if not isqt5:
+    elif runtime_for_win10:
         bit += "_win10"
+    else:
+        bit += "_win7"
     return version, links[bit], links.get("sha256", {}).get(bit, None)
 
 
@@ -92,7 +95,7 @@ def doupdate():
     if not gobject.baseobject.update_avalable:
         return
     shutil.copy(
-        r".\files\plugins\shareddllproxy{}.exe".format(("32", "64")[is_bit_64]),
+        r".\files\shareddllproxy{}.exe".format(("32", "64")[runtime_bit_64]),
         gobject.getcachedir("Updater.exe"),
     )
 
@@ -234,9 +237,19 @@ def versionlabelmaybesettext(self, x):
 
 
 def delayloadlinks(key):
-    sources = static_data["aboutsource"][key]
+    sources: "list[dict]" = static_data["aboutsource"][key]
     grid = []
     for source in sources:
+        link = source.get("link")
+        if link:
+            grid.append(
+                [
+                    source.get("name", ""),
+                    (makehtml(link, source.get("vis", None)), 2),
+                    source.get("about", ""),
+                ]
+            )
+            continue
         __grid = []
         function = source.get("function")
         if function:
@@ -257,6 +270,7 @@ def delayloadlinks(key):
                     ]
                     + ([link.get("about")] if link.get("about") else [])
                 )
+
         grid.append([dict(title=source.get("name", None), type="grid", grid=__grid)])
     return grid
 
@@ -365,7 +379,7 @@ class aboutwidget(NQGroupBox):
             commonlink += qqqun + [""]
             shuominggrid = [
                 [getboxlayout(commonlink)],
-                ["如果你感觉该软件对你有帮助，欢迎微信扫码赞助，谢谢~"],
+                ["软件维护不易，如果你感觉该软件对你有帮助，欢迎微信扫码赞助，谢谢~"],
                 [self.createimageview],
             ]
 
@@ -458,7 +472,9 @@ def setTab_about(self, basel):
                                 delayloadsvg,
                                 "HIllya51/LunaTranslator",
                             ),
-                            '<a href="https://github.com/HIllya51/LunaTranslator">LunaTranslator</a> 使用 <a href="https://github.com/HIllya51/LunaTranslator/blob/main/LICENSE">GPLv3</a> 许可证。',
+                            MDLabel(
+                                "[LunaTranslator](https://github.com/HIllya51/LunaTranslator)使用[GPLv3](https://github.com/HIllya51/LunaTranslator/blob/main/LICENSE)许可证。"
+                            ),
                         ],
                         [("引用的项目", -1)],
                         makelink("opencv/opencv"),

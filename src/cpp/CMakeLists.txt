@@ -4,8 +4,17 @@ project(LunaPlugins)
 
 option(WINXP "WINXP" OFF)
 option(WIN10ABOVE "WIN10ABOVE" OFF)
+
 if(NOT WIN10ABOVE)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    if(WINXP)
+        set(__APP "_winxp")
+    else()
+        set(__APP "_win7")
+    endif()
+else()
+    add_definitions(-DWIN10ABOVE=${WIN10ABOVE})
+    set(__APP "_win10")
 endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -21,7 +30,7 @@ else()
     set(platform "x86")
 endif()
 
-set(CMAKE_FINAL_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/builds/${CMAKE_BUILD_TYPE}_${platform})
+set(CMAKE_FINAL_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/builds/${CMAKE_BUILD_TYPE}_${platform}${__APP})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${CMAKE_FINAL_OUTPUT_DIRECTORY}>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_FINAL_OUTPUT_DIRECTORY}>)

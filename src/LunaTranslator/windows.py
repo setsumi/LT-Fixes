@@ -97,6 +97,7 @@ SW_SHOWNORMAL = 1
 WS_EX_TOOLWINDOW = 128
 SWP_NOSIZE = 1
 SW_SHOW = 5
+WS_THICKFRAME = 0x00040000
 
 FILE_SHARE_READ = 0x00000001
 FILE_ATTRIBUTE_NORMAL = 0x80
@@ -698,19 +699,6 @@ CopyFile.restype = BOOL
 SetProp = _user32.SetPropW
 SetProp.argtypes = HWND, LPCWSTR, HANDLE
 SetProp.restype = BOOL
-
-
-_GetEnvironmentVariableW = _kernel32.GetEnvironmentVariableW
-_GetEnvironmentVariableW.argtypes = c_wchar_p, c_wchar_p, DWORD
-_SetEnvironmentVariableW = _kernel32.SetEnvironmentVariableW
-_SetEnvironmentVariableW.argtypes = LPCWSTR, LPCWSTR
-
-
-def addenvpath(path):
-    path = os.path.abspath(path)
-    env = create_unicode_buffer(65535)
-    _GetEnvironmentVariableW("PATH", env, 65535)
-    _SetEnvironmentVariableW("PATH", env.value + ";" + path)
 
 
 GetModuleHandle = _kernel32.GetModuleHandleW

@@ -34,7 +34,7 @@ class HtmlPlainTextEdit(QTextEdit):
         custom_action.triggered.connect(self.handle_custom_action)
         menu.addAction(custom_action)
 
-        menu.exec_(event.globalPos())
+        menu.exec(event.globalPos())
 
     def handle_custom_action(self):
         self.insertPlainText(NativeUtils.ClipBoard.text)
@@ -325,11 +325,12 @@ class dialog_memory(saveposwindow):
         self.textbtn = IconButton(parent=self, icon="fa.text-height", tips="插入文本")
         openfile = IconButton(parent=self, icon="fa.external-link", tips="打开文件")
         openfile.clicked.connect(lambda: self.editororview.sourcefileopen())
+        self.buttonslayout.addWidget(openfile)
+        self.buttonslayout.addWidget(IconButton(None))
         self.buttonslayout.addWidget(self.textbtn)
         self.buttonslayout.addWidget(self.insertaudiobtn)
         self.buttonslayout.addWidget(self.insertpicbtn)
         self.buttonslayout.addWidget(self.switch)
-        self.buttonslayout.addWidget(openfile)
         self.insertpicbtn.clicked.connect(self.Picselect)
         self.insertaudiobtn.clicked.connect(self.AudioSelect)
         self.textbtn.clicked.connect(self.TextInsert)
