@@ -10,6 +10,22 @@
 #include <atlbase.h>
 #include "../common.hpp"
 
+#ifdef WIN10ABOVE
+#define RUNTIME L"runtime31264"
+#else
+#ifdef WINXP
+#define RUNTIME L"runtime3432"
+#else
+#ifdef _WIN64
+#define RUNTIME L"runtime3764"
+#else
+#define RUNTIME L"runtime3732"
+#endif
+#endif
+#endif
+#define FILES L"files\\"
+#define FILESRUNTIME FILES RUNTIME
+
 //---------------------------------------------------------------------
 // dtor
 //---------------------------------------------------------------------
@@ -199,7 +215,8 @@ int PyStand::RunString(const wchar_t *script)
 
 #ifdef WINXP
 	auto Py_SetPath = (void (*)(const wchar_t *))GetProcAddress(_hDLL, "Py_SetPath");
-	Py_SetPath(L"./files/runtime/Lib;./files/runtime/DLLs;./files/runtime/Lib/site-packages");
+	std::wstring path = std::wstring(FILESRUNTIME) + L"\\Lib;" + FILESRUNTIME + L"\\DLLs;" + FILESRUNTIME + L"\\Lib\\site-packages";
+	Py_SetPath(path.c_str());
 #endif
 	hr = _Py_Main((int)_py_args.size(), &_py_args[0]);
 	return hr;
@@ -344,7 +361,8 @@ int main()
 			return 0;
 	}
 	CHandle __handle{CreateMutexA(&allAccess, FALSE, "LUNA_UPDATER_BLOCK")};
-	PyStand ps(L"files\\runtime");
+
+	PyStand ps(FILESRUNTIME);
 	if (ps.DetectScript() != 0)
 	{
 		return 3;
