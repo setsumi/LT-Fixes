@@ -396,7 +396,7 @@ class aboutwidget(NQGroupBox):
         elif getlanguse() == Languages.TradChinese:
             shuominggrid = [[MDLabel1("\n\n".join([t1, t4, t5]))]]
         else:
-            shuominggrid = [[MDLabel1("\n\n".join([t1, t4, t6]))]]
+            shuominggrid = [[MDLabel1("\n\n".join(["[LT-Fixes github](https://github.com/setsumi/LT-Fixes) this un-official fork of LunaTranslator.", "[Differences](https://github.com/setsumi/LT-Fixes#lunatranslator-fixes--lunahook) from the original.", "[Download LT-Fixes](https://github.com/setsumi/LT-Fixes/releases)", "[Download LunaHook](https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true)", "[Download legacy LunaHook + Plugins](https://github.com/setsumi/LunaHook/releases)", "[Instructions](https://docs.lunatranslator.org/en/basicuse.html) official LunaTranslator site."]))]]
 
         makeforms(self.grid, shuominggrid)
 
