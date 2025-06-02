@@ -17,7 +17,9 @@
 - **\[important\]** Restored LunaHook plugin support (v8.7.1.1 and later)
 - **\[upstream\]** Removed LunaHook CLI (v9.0.0.2 and later)
 - **\[upstream\]** Removed Favorites feature (v9.3.1 and later)
-- **\[upstream\]** Removed built-in OCR which had a lot of errors (v9.4.5 and later)
+- **\[upstream\]** Removed built-in OCR which had a lot of errors (v9.4.5)
+- **\[upstream\]** Introduced new built-in OCR (v10.0.0.5 and later)
+- Disabled random nagging in settings dialog (10.3.2.4 and later)
 
 ### Download
 

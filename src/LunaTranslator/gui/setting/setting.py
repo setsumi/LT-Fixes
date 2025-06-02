@@ -172,7 +172,5 @@ class Setting(closeashidewindow):
         last = self.tab_widget.list_widget.count() - 1
         if "isopensettingfirsttime1" not in globalconfig:
             globalconfig["isopensettingfirsttime1"] = last
-        elif random.randint(0, 100) < 25:
-            globalconfig["isopensettingfirsttime1"] = last
         if globalconfig["isopensettingfirsttime1"] == last:
             self.tab_widget.setCurrentIndex(last)
