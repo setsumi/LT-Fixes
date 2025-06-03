@@ -25,10 +25,14 @@ int mssr(int argc, wchar_t *argv[])
 
     RoInitialize(RO_INIT_MULTITHREADED); // 系统的版本必须roinit
 
-    WCHAR env[65535];
-    GetEnvironmentVariableW(L"PATH", env, 65535);
-    auto newenv = std::wstring(env) + L";" + syspath1 + L";" + syspath2 + L";" + argv[6];
-    SetEnvironmentVariableW(L"PATH", newenv.c_str());
+    // WCHAR env[65535];
+    // GetEnvironmentVariableW(L"PATH", env, 65535);
+    // auto newenv = std::wstring(env) + L";" + syspath1 + L";" + syspath2 + L";" + argv[6];
+    // SetEnvironmentVariableW(L"PATH", newenv.c_str());
+    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    AddDllDirectory(argv[6]);
+    AddDllDirectory(syspath1);
+    AddDllDirectory(syspath2);
 
     auto config = EmbeddedSpeechConfig::FromPath(WideStringToString(argv[4], CP_ACP));
 
@@ -125,15 +129,8 @@ int mssr(int argc, wchar_t *argv[])
         CComPtr<CLoopbackCapture> capture;
         // Creates a push stream
         std::shared_ptr<PushAudioInputStream> pushStream;
-        if (wcscmp(argv[5], L"in") == 0)
-        {
-            audioConfig = AudioConfig::FromDefaultMicrophoneInput();
-        }
-        else if (wcscmp(argv[5], L"out") == 0)
-        {
-            audioConfig = AudioConfig::FromDefaultSpeakerOutput();
-        }
-        else if (wcscmp(argv[5], L"loopback") == 0)
+
+        if (wcscmp(argv[5], L"loopback") == 0)
         {
             capture = new CLoopbackCapture{16000, 16, 1};
             if (!capture)
@@ -145,6 +142,14 @@ int mssr(int argc, wchar_t *argv[])
             };
             // Creates a speech recognizer from stream input;
             audioConfig = AudioConfig::FromStreamInput(pushStream);
+        }
+        else if (argv[5][0] == L'i')
+        {
+            audioConfig = (wcscmp(argv[5], L"i") == 0) ? AudioConfig::FromDefaultMicrophoneInput() : AudioConfig::FromMicrophoneInput(WideStringToString(argv[5] + 1));
+        }
+        else if (argv[5][0] == L'o')
+        {
+            audioConfig = (wcscmp(argv[5], L"o") == 0) ? AudioConfig::FromDefaultSpeakerOutput() : AudioConfig::FromSpeakerOutput(WideStringToString(argv[5] + 1));
         }
         callback(true, 4);
         auto recognizer = create_recognizer(audioConfig, callback);
