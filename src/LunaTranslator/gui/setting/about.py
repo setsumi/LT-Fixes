@@ -38,10 +38,7 @@ def createversionlabel(self):
     )
     versionlabel.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
 
-    gobject.signals.connectsignal(
-        gobject.signals.versiontextsignal,
-        functools.partial(versionlabelmaybesettext, versionlabel),
-    )
+    versionlabel.setText('<a href="fuck">{}</a>'.format("Change Log"))
     return versionlabel
 
 
@@ -173,20 +170,6 @@ def updatexx(self):
 
     return getboxlayout(
         [
-            D_getsimpleswitch(
-                globalconfig,
-                "autoupdate",
-                callback=lambda _: (
-                    versionchecktask.put(_),
-                    (
-                        self.aboutlayout.layout().setRowVisible(3, False)
-                        if not _
-                        else ""
-                    ),
-                ),
-            ),
-            getsmalllabel(""),
-            getsmalllabel("最新版本"),
             functools.partial(createversionlabel, self),
             getsmalllabel(""),
             getsmalllabel("当前版本"),
@@ -278,7 +261,7 @@ class aboutwidget(NQGroupBox):
                 [self.createimageview],
             ]
         else:
-            shuominggrid = [[functools.partial(MDLabel1, "\n\n".join([t6, t4]))]]
+            shuominggrid = [[functools.partial(MDLabel1, "\n\n".join(["[LT-Fixes github](https://github.com/setsumi/LT-Fixes) this un-official fork of LunaTranslator.", "[Differences](https://github.com/setsumi/LT-Fixes#lunatranslator-fixes--lunahook) from the original.", "[Download LT-Fixes](https://github.com/setsumi/LT-Fixes/releases)", "[Download LunaHook](https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true)", "[Download legacy LunaHook + Plugins](https://github.com/setsumi/LunaHook/releases)", "[Instructions](https://docs.lunatranslator.org/en/basicuse.html) official LunaTranslator site."]))]]
 
         makeforms(self.grid, shuominggrid)
 
@@ -362,7 +345,7 @@ def setTab_about(self, basel):
                             ),
                         ],
                         ["使用代理", functools.partial(proxyusage, self)],
-                        ["自动更新", functools.partial(updatexx, self)],
+                        ["", functools.partial(updatexx, self)],
                         [functools.partial(progress___, self)],
                     ],
                 ),

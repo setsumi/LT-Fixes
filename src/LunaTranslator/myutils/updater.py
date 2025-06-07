@@ -156,6 +156,7 @@ def versioncheckthread():
         x = versionchecktask.get()
         gobject.baseobject.update_avalable = False
         gobject.signals.progresssignal4.emit("", 0)
+        return
         if not x:
             continue
         gobject.signals.versiontextsignal.emit("获取中")  # ,'',url,url))
