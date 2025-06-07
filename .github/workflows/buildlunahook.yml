@@ -4,16 +4,17 @@ on:
 
 jobs:
   build_xp:
-    runs-on: windows-2019
+    runs-on: windows-latest
     permissions:
       id-token: write
       attestations: write
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - run: src\scripts\install_msvc.bat v141_xp
       - uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
         with:
-          sdk-version: 26100
+          sdk-version: 22621
       - run: python src/scripts/build_lunahook.py build x86 0 winxp
   #   - run: python src/scripts/packlunahook.py
 
