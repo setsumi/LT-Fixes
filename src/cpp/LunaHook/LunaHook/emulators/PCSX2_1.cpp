@@ -543,6 +543,12 @@ namespace
 
         buffer->from(s);
     }
+    void SLPS25081(hook_context *context, HookParam *hp1, TextBuffer *buffer, uintptr_t *split)
+    {
+        const uintptr_t val = PCSX2_REG(a0);
+        const uintptr_t val2 = val & 0xFFFF;
+        buffer->from_t(val2);
+    }
 }
 struct emfuncinfoX
 {
@@ -550,6 +556,8 @@ struct emfuncinfoX
     emfuncinfo info;
 };
 static const emfuncinfoX emfunctionhooks_1[] = {
+    // 最終電車
+    {0x1264EC, {0, 0, 0, SLPS25081, 0, "SLPS-25081"}},
     // 夏夢夜話
     {0x7689BC, {DIRECT_READ, 0, 0, 0, SLPS25276, "SLPS-25276"}},
     // マイネリーベ 優美なる記憶
@@ -565,7 +573,7 @@ static const emfuncinfoX emfunctionhooks_1[] = {
     // My Merry May with be
     {0x1DB7DC, {0, PCSX2_REG_OFFSET(a3), 0, 0, FSLPM66045, "SLPM-66045"}},
     // CLANNAD - ゲオオンラインストア
-    {0x1DB7DC, {0, PCSX2_REG_OFFSET(s4), 0, 0, FSLPM66302, "SLPM-66302"}},
+    {0x14AC38, {0, PCSX2_REG_OFFSET(s4), 0, 0, FSLPM66302, "SLPM-66302"}},
     // 苺ましまろ
     {0x1439F4, {0, PCSX2_REG_OFFSET(s1), 0, 0, FSLPS25547, "SLPS-25547"}},
     // ブラッドプラス ワン ナイト キス

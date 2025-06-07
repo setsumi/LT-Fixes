@@ -11,24 +11,19 @@ set(mecabsrc "${mecab_SOURCE_DIR}/mecab/src")
 
 if(NOT EXISTS "${mecabsrc}/writeonceflag")
 
-    if(NOT WINXP)
-        file(READ "${mecabsrc}/dictionary.cpp" dictionary)
-        set(std_binary_function [=[
-namespace std
-{
+    file(READ "${mecabsrc}/dictionary.cpp" dictionary)
+    set(std_binary_function [=[
+
   template <class Argv1, class Argv2, class Result>
-  struct binary_function
+  struct std_binary_function_FUCK
   {
     typedef Argv1 first_argument_type;
     typedef Argv2 second_argument_type;
     typedef Result result_type;
   };
-}
 ]=])
-        file(WRITE "${mecabsrc}/dictionary.cpp" "${std_binary_function}${dictionary}")
-    else()
-
-    endif()
+    string(REPLACE "std::binary_function" "std_binary_function_FUCK" dictionary "${dictionary}")
+    file(WRITE "${mecabsrc}/dictionary.cpp" "${std_binary_function}${dictionary}")
 
     file(READ "${mecabsrc}/mecab.h" mecabh)
     string(REPLACE "__declspec(dllexport)" "" mecabh "${mecabh}")

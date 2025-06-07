@@ -58,7 +58,7 @@ elif sys.argv[1] == "build":
     target = sys.argv[4]
 
     archA = ("win32", "x64")[arch == "x64"]
-    vsver = "Visual Studio 16 2019" if target == "winxp" else "Visual Studio 17 2022"
+    vsver = "Visual Studio 17 2022"
     Tool = "v141_xp" if target == "winxp" else f"host={arch}"
     config = (
         "-DWIN10ABOVE=ON"

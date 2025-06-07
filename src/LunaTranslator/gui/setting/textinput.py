@@ -19,6 +19,7 @@ from gui.usefulwidget import (
     yuitsu_switch,
     D_getsimpleswitch,
     getboxwidget,
+    MDLabel,
     makesubtab_lazy,
     makescrollgrid,
     FocusFontCombo,
@@ -285,12 +286,16 @@ def createdownloadprogress(self):
         Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
     )
 
-    def __set(_d, text, i):
+    def __set(_d: QProgressBar, text, i):
         _d.setValue(i)
         _d.setFormat(text)
 
-    self.progresssignal2.connect(functools.partial(__set, downloadprogress))
-    self.progresssignal3.connect(lambda x: downloadprogress.setRange(0, x))
+    gobject.signals.connectsignal(
+        gobject.signals.progresssignal2, functools.partial(__set, downloadprogress)
+    )
+    gobject.signals.connectsignal(
+        gobject.signals.progresssignal3, lambda x: downloadprogress.setRange(0, x)
+    )
     return downloadprogress
 
 
@@ -408,8 +413,21 @@ def __srcofig(grids: list, self):
     grids.insert(0, [__])
 
 
-def filetranslate(self):
+class MDLabel2(QLabel):
+    def __init__(self, md):
+        super().__init__()
+        self.setText(md)
+        self.setOpenExternalLinks(False)
+        self.setWordWrap(True)
+        self.linkActivated.connect(self._linkActivated)
 
+    def _linkActivated(self, url: str):
+        link = "http://127.0.0.1:{}{}".format(globalconfig["networktcpport"], url)
+        os.startfile(link)
+
+
+def filetranslate(self):
+    fuckyou = lambda _: '<a href="{}">{}</a>'.format(_, _)
     grids = [
         [
             dict(
@@ -469,21 +487,22 @@ def filetranslate(self):
                         ),
                     ],
                     [],
-                    [functools.partial(createlabellink, "/")],
                     [
-                        functools.partial(createlabellink, "/page/mainui"),
-                    ],
-                    [
-                        functools.partial(createlabellink, "/page/transhist"),
-                    ],
-                    [
-                        functools.partial(createlabellink, "/page/dictionary"),
-                    ],
-                    [
-                        functools.partial(createlabellink, "/page/translate"),
-                    ],
-                    [
-                        functools.partial(createlabellink, "/page/ocr"),
+                        functools.partial(
+                            MDLabel2,
+                            ("&nbsp;" * 4).join(
+                                fuckyou(_)
+                                for _ in (
+                                    "/",
+                                    "/page/mainui",
+                                    "/page/transhist",
+                                    "/page/dictionary",
+                                    "/page/translate",
+                                    "/page/ocr",
+                                    "/page/tts",
+                                )
+                            ),
+                        )
                     ],
                 ],
             ),
@@ -504,24 +523,9 @@ def getpath():
     return None
 
 
-def open___(url):
-    link = "http://127.0.0.1:{}{}".format(globalconfig["networktcpport"], url)
-    os.startfile(link)
-
-
-def createlabellink(url):
-    l = QLabel('<a href="{}">{}</a>'.format(url, url))
-    l.linkActivated.connect(open___)
-    return l
-
-
 def __portconflict(self):
-
     _ = LLabel()
-    if self.portconflictcache:
-        _.setText(self.portconflictcache[-1])
-    self._ = _
-    self.portconflict.connect(_.setText)
+    gobject.signals.connectsignal(gobject.signals.portconflict, _.setText)
     return _
 
 

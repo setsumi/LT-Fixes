@@ -15,6 +15,7 @@ from myutils.config import (
     _TR,
     isascii,
 )
+from ctypes import cast, c_void_p, c_wchar_p
 from myutils.keycode import mod_map_r
 from gobject import sys_le_xp
 from myutils.mecab import mecab, latin
@@ -46,6 +47,7 @@ from gui.translatorUI import TranslatorWindow
 import functools, gobject
 from gui.transhist import transhist
 from gui.edittext import edittext
+from gui.flowsearchword import WordViewTooltip
 import importlib, qtawesome
 from functools import partial
 from gui.attachprocessdialog import AttachProcessDialog
@@ -58,7 +60,6 @@ from myutils.traceplaytime import playtimemanager
 from myutils.audioplayer import series_audioplayer
 from gui.dynalang import LAction
 from gui.setting.setting import Setting
-from gui.setting.textinput_ocr import showocrimage
 from gui.usefulwidget import PopupWidget
 from gui.rendertext.texttype import TextType, SpecialColor, TranslateColor
 from network.server.servicecollection import registerall
@@ -67,6 +68,7 @@ from tts.basettsclass import TTSbase
 from cishu.cishubase import cishubase
 from translator.basetranslator import basetrans
 from textio.textoutput.outputerbase import Base as outputerbase
+from myutils.updater import versioncheckthread
 
 
 class MAINUI:
@@ -97,9 +99,6 @@ class MAINUI:
         self.reader_uid = None
         self.__hwnd = None
         self.gameuid = 0
-        self.showocrimage = None
-        self.showocrimage_cached = None
-        self.showocrimage_cached2 = None
         self.autoswitchgameuid = True
         self.istriggertoupdate = False
         self.thishastranslated = True
@@ -108,13 +107,13 @@ class MAINUI:
 
     @threader
     def serviceinit(self):
-        self.settin_ui.portconflict.emit("")
+        gobject.signals.portconflict.emit("")
         self.service.stop()
         if globalconfig["networktcpenable"]:
             try:
                 self.service.init(globalconfig["networktcpport"])
             except OSError:
-                self.settin_ui.portconflict.emit("端口冲突")
+                gobject.signals.portconflict.emit("端口冲突")
 
     @threader
     def ttsautoforward(self):
@@ -128,32 +127,6 @@ class MAINUI:
         time.sleep(0.001)
         windows.keybd_event(windows.VK_RETURN, 0, windows.KEYEVENTF_KEYUP, 0)
 
-    def maybesetimage(self, pair):
-        if self.showocrimage:
-            try:
-                self.showocrimage.setimage.emit(pair)
-            except:
-                print_exc()
-        self.showocrimage_cached = pair
-
-    def maybesetocrresult(self, pair):
-        if self.showocrimage:
-            try:
-                self.showocrimage.setresult.emit(pair)
-            except:
-                print_exc()
-        self.showocrimage_cached2 = pair
-
-    def createshowocrimage(self):
-        try:
-            self.showocrimage = showocrimage(
-                self.settin_ui, self.showocrimage_cached, self.showocrimage_cached2
-            )
-            if self.showocrimage:
-                self.showocrimage.show()
-        except:
-            print_exc()
-
     @property
     def reader(self) -> TTSbase:
         return self._internal_reader
@@ -163,12 +136,12 @@ class MAINUI:
         if _ is None:
             self._internal_reader = None
             self.reader_uid = None
-            self.settin_ui.voicelistsignal.emit(None)
+            gobject.signals.voicelistsignal.emit(None)
         else:
             if self.reader_uid != _.uid:
                 return
             self._internal_reader = _
-            self.settin_ui.voicelistsignal.emit(_)
+            gobject.signals.voicelistsignal.emit(_)
 
     @property
     def textsource(self) -> basetext:
@@ -880,7 +853,7 @@ class MAINUI:
                 "copy": copyboard,
                 "texthook": texthook,
                 "filetrans": filetrans,
-                "mssr":mssr,
+                "mssr": mssr,
             }
             if use is None:
                 use = list(
@@ -1049,7 +1022,6 @@ class MAINUI:
         )
         if ((not ismenulist)) and self.__dontshowintaborsetbackdrop(widget):
             return
-        NativeUtils.SetTheme(int(widget.winId()), dark, globalconfig["WindowBackdrop"])
         if ismenulist:
             name = globalconfig["theme3"]
             NativeUtils.SetCornerNotRound(int(widget.winId()), False, name == "QTWin11")
@@ -1059,6 +1031,10 @@ class MAINUI:
                 )
             else:
                 NativeUtils.clearEffect(int(widget.winId()))
+        else:
+            NativeUtils.SetTheme(
+                int(widget.winId()), dark, globalconfig["WindowBackdrop"]
+            )
 
     def checkkeypresssatisfy(self, key, df=False):
         if not globalconfig["wordclickkbtriggerneed"].get(key, df):
@@ -1098,8 +1074,14 @@ class MAINUI:
                 word1, self.currenttext, append
             ),
             "openlink": __openlink,
-            "searchword_S": lambda word1: self.settin_ui.hover_search_word.emit(
-                word1, self.currenttext, append, False, False
+            "searchword_S": lambda word1: threader(
+                gobject.signals.hover_search_word.emit
+            )(
+                word1,
+                self.currenttext,
+                append,
+                False,
+                False,
             ),
         }
         noneedkeys = []
@@ -1378,11 +1360,13 @@ class MAINUI:
         self.startreader()
         self.searchwordW = searchwordW(self.commonstylebase)
         self.hookselectdialog = hookselect(self.commonstylebase)
+        self.WordViewTooltip = WordViewTooltip(self.commonstylebase)
         self.starttextsource()
         self.inittray()
         self.playtimemanager = playtimemanager()
         self.urlprotocol()
         self.serviceinit()
+        versioncheckthread()
 
     def WinEventHookCALLBACK(self, event, hwnd, idObject):
         try:
@@ -1438,25 +1422,28 @@ class MAINUI:
             return
         return os.startfile(file)
 
-    def WindowMessageCallback(self, msg: int, boolvalue: bool, strvalue: str):
+    def WindowMessageCallback(self, msg: int, value1: c_void_p, value2: c_void_p):
         if msg == 0:
             if globalconfig["darklight2"] == 0:
                 self.commonstylebase.setstylesheetsignal.emit()
         elif msg == 1:
-            if boolvalue:
+            running = not (value1 == None and value2 == None)
+            if running:
                 self.translation_ui.settop()
             else:
                 if not globalconfig["keepontop"]:
                     self.translation_ui.canceltop()
-            self.translation_ui.magpiecallback.emit(boolvalue)
+            self.translation_ui.magpiecallback.emit(running)
         elif msg == 2:
             self.translation_ui.closesignal.emit()
         elif msg == 3:
-            self.translation_ui.clipboardcallback.emit(boolvalue, strvalue)
+            gobject.signals.clipboardcallback.emit(
+                bool(value1), cast(value2, c_wchar_p).value
+            )
         elif msg == 4:
-            self.showtraymessage("Magpie", strvalue, lambda: 1)
+            self.showtraymessage("Magpie", cast(value2, c_wchar_p).value, lambda: 1)
         elif msg == 5:
-            magpie_config.update(json.loads(strvalue))
+            magpie_config.update(json.loads(cast(value2, c_wchar_p).value))
 
     def _dowhenwndcreate(self, obj):
         if not isinstance(obj, QWidget):

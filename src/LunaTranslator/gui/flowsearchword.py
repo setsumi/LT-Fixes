@@ -246,8 +246,10 @@ class WordViewTooltip(resizableframeless, DraggableQWidget):
         )
 
     def resizeEvent(self, a0: QResizeEvent):
-        self.doResize()
-        globalconfig["WordViewTooltip2"] = a0.size().width(), a0.size().height()
+        if self.__state != 0:
+            # Qt模式下，谜之resize
+            self.doResize()
+            globalconfig["WordViewTooltip2"] = a0.size().width(), a0.size().height()
         return super().resizeEvent(a0)
 
     def setbgcolor(self):
@@ -289,6 +291,13 @@ class WordViewTooltip(resizableframeless, DraggableQWidget):
                 int(self.winId()), globalconfig["WordViewTooltipDWM_1"]
             )
 
+    def __load(self):
+        if self.__state != 0:
+            return
+        self.__state = 1
+        self.setupUi()
+        self.__state = 2
+
     def __init__(self, parent):
         DraggableQWidget.__init__(self)
         resizableframeless.__init__(
@@ -297,6 +306,18 @@ class WordViewTooltip(resizableframeless, DraggableQWidget):
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint,
             None,
         )
+        self.__state = 0
+        gobject.signals.hover_search_word.connect(self.searchword)
+        self.__f = QTimer(self)
+        self.__f.setInterval(50)
+        self.__f.timeout.connect(self.__detectkey)
+        self.__savestatus = None
+
+    def Leave(self):
+        self.__f.stop()
+        self.lastword = None
+
+    def setupUi(self):
         self.lastword = None
         self.setMouseTracking(True)
 
@@ -374,10 +395,6 @@ class WordViewTooltip(resizableframeless, DraggableQWidget):
         self.view.internalmoved.connect(
             lambda pos: self.w2.move(self.view.mapToParent(pos))
         )
-        self.__f = QTimer(self)
-        self.__f.setInterval(50)
-        self.__f.timeout.connect(self.__detectkey)
-        self.__savestatus = None
 
     def __detectkey(self):
         if not globalconfig["usesearchword_S_hover"]:
@@ -402,6 +419,9 @@ class WordViewTooltip(resizableframeless, DraggableQWidget):
         show=False,
         force=False,
     ):
+        self.__load()
+        if self.__state != 2:
+            return
         if fromhover and not force:
             if word == self.lastword:
                 return self.moveresult_1()

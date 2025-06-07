@@ -1,16 +1,14 @@
 from qtsymbols import *
 import functools, re
-import NativeUtils, queue, hashlib, threading
-from myutils.config import globalconfig, static_data, _TR
+import NativeUtils
+from myutils.config import globalconfig, static_data
 from gobject import runtime_for_xp, runtime_bit_64, runtime_for_win10
-from myutils.wrapper import threader, tryprint, trypass
+from myutils.wrapper import threader
 from myutils.hwnd import getcurrexe
 from myutils.utils import makehtml, getlanguse, dynamiclink
 import requests, importlib
-import shutil, gobject
-from myutils.proxy import getproxy
-import zipfile, os
-import subprocess
+import gobject
+import os
 from traceback import print_exc
 from gui.usefulwidget import (
     D_getsimpleswitch,
@@ -28,212 +26,28 @@ from gui.usefulwidget import (
 )
 from language import UILanguages, Languages
 from gui.dynalang import LLabel
-
-versionchecktask = queue.Queue()
-
-
-def tryqueryfromhost():
-    wait = threading.Semaphore(0)
-    results = []
-    proxy = getproxy()
-    for i, main_server in enumerate(static_data["main_server"]):
-
-        @threader
-        @trypass
-        def __(i, main_server, proxy):
-
-            res = requests.get(
-                "{main_server}/version".format(main_server=main_server),
-                verify=False,
-                proxies=proxy,
-            )
-            res = res.json()
-            results.append((i, res))
-            wait.release()
-
-        __(i, main_server, proxy)
-        if proxy.get("https"):
-            __(i, main_server, None)
-    wait.acquire()
-    gobject.serverindex = results[0][0]
-    return results[0][1]["version"], results[0][1]
-
-
-def tryqueryfromgithub():
-
-    res = requests.get(
-        "https://api.github.com/repos/HIllya51/LunaTranslator/releases/latest",
-        verify=False,
-    )
-    link = {
-        "64": "https://github.com/HIllya51/LunaTranslator/releases/latest/download/LunaTranslator.zip",
-        "32": "https://github.com/HIllya51/LunaTranslator/releases/latest/download/LunaTranslator_x86.zip",
-    }
-    return res.json()["tag_name"], link
-
-
-def trygetupdate():
-    try:
-        version, links = tryqueryfromhost()
-    except:
-        print_exc()
-        try:
-            version, links = tryqueryfromgithub()
-        except:
-            return None
-    bit = ("x86", "x64")[runtime_bit_64]
-    if runtime_for_xp:
-        bit += "_winxp"
-    elif runtime_for_win10:
-        bit += "_win10"
-    else:
-        bit += "_win7"
-    return version, links[bit], links.get("sha256", {}).get(bit, None)
-
-
-def doupdate():
-    if not gobject.baseobject.update_avalable:
-        return
-    shutil.copy(
-        r".\files\shareddllproxy{}.exe".format(("32", "64")[runtime_bit_64]),
-        gobject.getcachedir("Updater.exe"),
-    )
-
-    for _dir, _, _fs in os.walk(r".\cache\update"):
-        for _f in _fs:
-            if _f.lower() == "lunatranslator.exe":
-                found = _dir
-    subprocess.Popen(
-        r".\cache\Updater.exe update {} {} {}".format(
-            int(gobject.baseobject.istriggertoupdate), found, os.getpid()
-        )
-    )
-
-
-def updatemethod_checkalready(savep, sha256):
-    if not os.path.exists(savep):
-        return False
-    if not sha256:
-        return True
-    with open(savep, "rb") as ff:
-        newsha256 = hashlib.sha256(ff.read()).hexdigest()
-        return newsha256 == sha256
-
-
-@tryprint
-def updatemethod(urls, self):
-    url, sha256 = urls
-    check_interrupt = lambda: not (
-        globalconfig["autoupdate"] and versionchecktask.empty()
-    )
-
-    savep = gobject.getcachedir("update/" + url.split("/")[-1])
-    if not savep.endswith(".zip"):
-        savep += ".zip"
-    if check_interrupt():
-        return
-    if updatemethod_checkalready(savep, sha256):
-        return savep
-    with open(savep, "wb") as file:
-        r = requests.get(url, stream=True, verify=False, proxies=getproxy())
-        size = int(r.headers["Content-Length"])
-        file_size = 0
-        for i in r.iter_content(chunk_size=1024 * 32):
-            if check_interrupt():
-                return
-            if not i:
-                continue
-            file.write(i)
-            thislen = len(i)
-            file_size += thislen
-
-            prg = int(10000 * file_size / size)
-            prg100 = prg / 100
-            sz = int(1000 * (int(size / 1024) / 1024)) / 1000
-            self.progresssignal4.emit(
-                _TR("总大小_{} MB _进度_{:0.2f}%").format(sz, prg100),
-                prg,
-            )
-
-    if check_interrupt():
-        return
-    if updatemethod_checkalready(savep, sha256):
-        return savep
-
-
-def uncompress(self, savep):
-    self.progresssignal4.emit(_TR("正在解压"), 10000)
-    shutil.rmtree(gobject.getcachedir("update/LunaTranslator/"))
-    with zipfile.ZipFile(savep) as zipf:
-        zipf.extractall(gobject.getcachedir("update"))
-
-
-@threader
-def versioncheckthread(self):
-    versionchecktask.put(True)
-    while True:
-        x = versionchecktask.get()
-        gobject.baseobject.update_avalable = False
-        self.progresssignal4.emit("", 0)
-        return
-        if not x:
-            continue
-        self.versiontextsignal.emit("获取中")  # ,'',url,url))
-        _version = trygetupdate()
-
-        if _version is None:
-            sversion = "获取失败"
-        else:
-            sversion = _version[0]
-        self.versiontextsignal.emit(sversion)
-        if getcurrexe().endswith("python.exe"):
-            continue
-        version = NativeUtils.QueryVersion(getcurrexe())
-        need = (
-            version
-            and _version
-            and version < tuple(int(_) for _ in _version[0][1:].split("."))
-        )
-        if not (need and globalconfig["autoupdate"]):
-            continue
-        self.progresssignal4.emit("……", 0)
-        savep = updatemethod(_version[1:], self)
-        if not savep:
-            self.progresssignal4.emit(_TR("自动更新失败，请手动更新"), 0)
-            continue
-
-        uncompress(self, savep)
-        gobject.baseobject.update_avalable = True
-        self.progresssignal4.emit(_TR("准备完毕，等待更新"), 10000)
-        gobject.baseobject.showtraymessage(
-            sversion,
-            _TR("准备完毕，等待更新") + "\n" + _TR("点击消息后退出并开始更新"),
-            gobject.baseobject.triggertoupdate,
-        )
+from myutils.updater import versionchecktask
 
 
 def createversionlabel(self):
 
-    versionlabel = LLabel()
+    versionlabel = getsmalllabel()()
     versionlabel.setOpenExternalLinks(False)
     versionlabel.linkActivated.connect(
         lambda _: os.startfile(dynamiclink("/ChangeLog"))
     )
     versionlabel.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
-    try:
-        versionlabel.setText('<a href="fuck">{}</a>'.format("Change Log"))
-    except:
-        pass
-    self.versionlabel = versionlabel
-    return self.versionlabel
+
+    gobject.signals.connectsignal(
+        gobject.signals.versiontextsignal,
+        functools.partial(versionlabelmaybesettext, versionlabel),
+    )
+    return versionlabel
 
 
-def versionlabelmaybesettext(self, x):
+def versionlabelmaybesettext(versionlabel: QLabel, x):
     x = '<a href="fuck">{}</a>'.format(x)
-    try:
-        self.versionlabel.setText(x)
-    except:
-        self.versionlabel_cache = x
+    versionlabel.setText(x)
 
 
 def delayloadlinks(key):
@@ -310,13 +124,8 @@ def validator(createproxyedit_check: QLabel, text):
 
 
 def proxyusage(self):
-    w = NQGroupBox(self)
-    l = QHBoxLayout(w)
-    w1 = QWidget()
-    hbox = QHBoxLayout(w1)
+    hbox = QHBoxLayout()
     hbox.setContentsMargins(0, 0, 0, 0)
-    l.addWidget(LLabel("使用代理"))
-    l.addWidget(w1)
     w2 = QWidget()
     w2.setEnabled(globalconfig["useproxy"])
     switch1 = D_getsimpleswitch(globalconfig, "useproxy", callback=w2.setEnabled)()
@@ -325,7 +134,7 @@ def proxyusage(self):
     hbox2 = QHBoxLayout(w2)
     hbox2.setContentsMargins(0, 0, 0, 0)
     hbox2.addWidget(QLabel())
-    hbox2.addWidget(LLabel("自动获取系统代理") )
+    hbox2.addWidget(LLabel("自动获取系统代理"))
 
     w3 = QWidget()
     hbox3 = QHBoxLayout(w3)
@@ -338,14 +147,14 @@ def proxyusage(self):
     hbox2.addWidget(switch2)
     hbox2.addWidget(w3)
     hbox3.addWidget(QLabel())
-    hbox3.addWidget(LLabel("手动设置代理") )
+    hbox3.addWidget(LLabel("手动设置代理"))
     proxy = QLineEdit(globalconfig["proxy"])
     check = QLabel()
     validator(check, globalconfig["proxy"])
     proxy.textChanged.connect(functools.partial(validator, check))
     hbox3.addWidget(proxy)
     hbox3.addWidget(check)
-    return w
+    return hbox
 
 
 def updatexx(self):
@@ -357,43 +166,54 @@ def updatexx(self):
         if vs.endswith(".0"):
             vs = vs[:-2]
         versionstring = ("v{}").format(vs)
-
-    w = NQGroupBox(self)
-    l = VisLFormLayout(w)
-    self.updatelayout = l
-    l.addRow(
-        getboxlayout(
-            [
-                "当前版本",
-                versionstring,
-                functools.partial(createversionlabel, self),
-                "",
-                "",
-                "",
-                "",
-                "",
-            ]
+        versionstring += (
+            " " + [["Win7", "WinXP"][runtime_for_xp], "Win10"][runtime_for_win10]
         )
+        versionstring += " " + ["32bit", "64bit"][runtime_bit_64]
+
+    return getboxlayout(
+        [
+            D_getsimpleswitch(
+                globalconfig,
+                "autoupdate",
+                callback=lambda _: (
+                    versionchecktask.put(_),
+                    (
+                        self.aboutlayout.layout().setRowVisible(3, False)
+                        if not _
+                        else ""
+                    ),
+                ),
+            ),
+            getsmalllabel(""),
+            getsmalllabel("最新版本"),
+            functools.partial(createversionlabel, self),
+            getsmalllabel(""),
+            getsmalllabel("当前版本"),
+            getsmalllabel(versionstring),
+            "",
+        ]
     )
 
+
+def progress___(self):
+
     downloadprogress = QProgressBar(self)
-    self.downloadprogress = downloadprogress
     downloadprogress.setRange(0, 10000)
     downloadprogress.setAlignment(
         Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
     )
+    self.downloadprogress = downloadprogress
+    return downloadprogress
 
-    try:
-        text, val = self.downloadprogress_cache
-        downloadprogress.setValue(val)
-        downloadprogress.setFormat(text)
-    except:
-        text = ""
-        val = 0
-    l.addRow(downloadprogress)
 
-    l.setRowVisible(1, val or text)
-    return w
+def _progresssignal4(
+    updatelayout: VisLFormLayout, downloadprogress: QProgressBar, text, val
+):
+    downloadprogress.setValue(val)
+    downloadprogress.setFormat(text)
+    if (val or text) and globalconfig["autoupdate"]:
+        updatelayout.setRowVisible(3, True)
 
 
 class MDLabel1(MDLabel):
@@ -448,17 +268,17 @@ class aboutwidget(NQGroupBox):
         t6 = "如果使用中遇到困难，可以查阅[使用说明](/)，也欢迎加入[Discord](https://discord.com/invite/ErtDwVeAbB)、在[Github](https://github.com/HIllya51/LunaTranslator)上发起[issue](https://github.com/HIllya51/LunaTranslator/issues)来与我交流。"
         if getlanguse() == Languages.Chinese:
             shuominggrid = [
-                [MDLabel1("\n\n".join([t3, t2]), static=True)],
+                [functools.partial(MDLabel1, "\n\n".join([t3, t2]), static=True)],
                 [self.createimageview],
             ]
 
         elif getlanguse() == Languages.TradChinese:
             shuominggrid = [
-                [MDLabel1("\n\n".join([t5, t7]), static=True)],
+                [functools.partial(MDLabel1, "\n\n".join([t5, t7]), static=True)],
                 [self.createimageview],
             ]
         else:
-            shuominggrid = [[MDLabel1("\n\n".join(["[LT-Fixes github](https://github.com/setsumi/LT-Fixes) this un-official fork of LunaTranslator.", "[Differences](https://github.com/setsumi/LT-Fixes#lunatranslator-fixes--lunahook) from the original.", "[Download LT-Fixes](https://github.com/setsumi/LT-Fixes/releases)", "[Download LunaHook](https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true)", "[Download legacy LunaHook + Plugins](https://github.com/setsumi/LunaHook/releases)", "[Instructions](https://docs.lunatranslator.org/en/basicuse.html) official LunaTranslator site."]))]]
+            shuominggrid = [[functools.partial(MDLabel1, "\n\n".join([t6, t4]))]]
 
         makeforms(self.grid, shuominggrid)
 
@@ -526,10 +346,12 @@ def setTab_about(self, basel):
         [
             [
                 dict(
-                    type="grid",
+                    name="aboutlayout",
+                    parent=self,
+                    hiderows=[3],
                     grid=[
                         [
-                            getsmalllabel("软件显示语言"),
+                            "软件显示语言",
                             __delayloadlangs,
                             D_getIconButton(
                                 callback=lambda: os.startfile(
@@ -539,11 +361,12 @@ def setTab_about(self, basel):
                                 ),
                             ),
                         ],
+                        ["使用代理", functools.partial(proxyusage, self)],
+                        ["自动更新", functools.partial(updatexx, self)],
+                        [functools.partial(progress___, self)],
                     ],
                 ),
             ],
-            [functools.partial(updatexx, self)],
-            [functools.partial(proxyusage, self)],
             [aboutwidget],
             [
                 functools.partial(
@@ -554,8 +377,9 @@ def setTab_about(self, basel):
                                 delayloadsvg,
                                 "HIllya51/LunaTranslator",
                             ),
-                            MDLabel(
-                                "[LunaTranslator](https://github.com/HIllya51/LunaTranslator)使用[GPLv3](https://github.com/HIllya51/LunaTranslator/blob/main/LICENSE)许可证。"
+                            functools.partial(
+                                MDLabel,
+                                "[LunaTranslator](https://github.com/HIllya51/LunaTranslator)使用[GPLv3](https://github.com/HIllya51/LunaTranslator/blob/main/LICENSE)许可证。",
                             ),
                         ],
                         [("引用的项目", -1)],
@@ -592,4 +416,11 @@ def setTab_about(self, basel):
             ],
         ],
         basel,
+    )
+
+    gobject.signals.connectsignal(
+        gobject.signals.progresssignal4,
+        functools.partial(
+            _progresssignal4, self.aboutlayout.layout(), self.downloadprogress
+        ),
     )
