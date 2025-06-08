@@ -1056,20 +1056,14 @@ class TranslatorWindow(resizableframeless):
         )
 
     def safemove(self, pos: QPoint):
-        if pos.x() < -self.width() / 2:
+        if pos.x() < -self.width():
             return
         if pos.y() < 0:
             return
         if len(QApplication.screens()) == 1:
-            if (
-                pos.x() + self.width() / 2
-                > QApplication.primaryScreen().geometry().width()
-            ):
+            if pos.x() + self.width() > self.screen().geometry().width():
                 return
-            if (
-                pos.y() + self.height()
-                > QApplication.primaryScreen().geometry().height()
-            ):
+            if pos.y() + self.height() > self.screen().geometry().height():
                 return
 
         self.move(pos)
