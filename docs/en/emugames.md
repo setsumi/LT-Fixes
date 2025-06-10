@@ -25,6 +25,13 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 
 |  | ID       | Game                |
 | ---- | ---------- | ------------------- |
+|  | 010045C0109F2000 | VARIABLE BARRICADE |
+|  | 010060A0161EC000 | 月の彼方で逢いましょう |
+|  | 0100C800169E6000 | メルキス |
+|  | 01008DC019F7A000 | エヴァーメイデン ～堕落の園の乙女たち～ |
+|  | 01002AF019F88000 | ふゆから、くるる。 |
+|  | 0100D4800C476000 | 添いカノ ～ぎゅっと抱きしめて～ |
+|  | 01003FF010312000 | 軍靴をはいた猫 |
 |  | 01003080177CA000 | 冥契のルペルカリア |
 |  | 0100E920175B0000 | ――ｯ違う!!!+ |
 |  | 01009A60205DE000 | 数乱digit |
@@ -49,7 +56,6 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | 0100A460141B8000 | 白と黒のアリス |
 |  | 0100A460141B8000 | 白と黒のアリス -Twilight line- |
 |  | 0100A3A00CC7E000 | CLANNAD |
-|  | 010045C0109F2000 | VARIABLE BARRICADE NS |
 |  | 0100A1200CA3C000 | 蝶の毒 華の鎖～大正艶恋異聞～ |
 |  | 0100C29017106000 | Live a Live |
 |  | 01006590155AC000 | さくらの雲＊スカアレットの恋 |
@@ -58,6 +64,7 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | 0100F5A01EA12000 | 茉莉花之炯 天命胤異傳 |
 |  | 0100F7E00DFC8000 | キューピット・パラサイト |
 |  | 0100925014864000 | ラディアンテイル |
+|  | 010088B01A8FC000 | ラディアンテイル ～ファンファーレ！～ |
 |  | 01000130150FA000 | MUSICUS |
 |  | 0100936018EB4000 | Story of Seasons a Wonderful Life |
 |  | 0100982015606000 | 乙女ゲームの破滅フラグしかない悪役令嬢に転生してしまった… 〜波乱を呼ぶ海賊〜 |
@@ -242,7 +249,6 @@ For games that are not supported, please send an [issue](https://lunatranslator.
 |  | 01004E5017C54000 | Dance with Devils |
 |  | 01003BB01DF54000 | My9Swallows TOPSTARS LEAGUE |
 |  | 01005AF00E9DC000 | 時計仕掛けのアポカリプス |
-|  | 010088B01A8FC000 | ラディアンテイル ～ファンファーレ！～ |
 |  | 010032300C562000 | Lover Pretend |
 |  | 01001A500AD6A000 | NORN9 ~ノルン+ノネット~ LOFN |
 |  | 010027300A660000 | 私立ベルばら学園 ～ベルサイユのばらRe*imagination～ |
