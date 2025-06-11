@@ -1174,6 +1174,7 @@ class MAINUI:
     def inittray(self):
         self.tray = QSystemTrayIcon()
         self.tray.setIcon(getExeIcon(getcurrexe()))
+        self.tray.setToolTip("LunaTranslator")
         self.tray.setContextMenu(
             self.createmenuela() if gobject.istest else self.createmenu1()
         )
