@@ -32,7 +32,6 @@ from gui.rangeselect import rangeselct_function
 from gui.usefulwidget import resizableframeless
 from gui.edittext import edittrans
 from gui.gamemanager.dialog import dialog_savedgame_integrated
-from gui.gamemanager.setting import calculate_centered_rect
 from gui.gamemanager.common import startgame
 from gui.dynalang import LDialog, LLabel, LAction
 
@@ -639,7 +638,7 @@ class TranslatorWindow(resizableframeless):
                     colorstate=lambda: globalconfig["autorun"],
                 ),
             ),
-            ("setting", lambda: gobject.baseobject.settin_ui.showsignal.emit()),
+            ("setting", lambda: gobject.signals.settin_ui_showsignal.emit()),
             (
                 "copy",
                 lambda: NativeUtils.ClipBoard.setText(gobject.baseobject.currenttext),
@@ -1128,18 +1127,37 @@ class TranslatorWindow(resizableframeless):
             lambda: self.settop() if globalconfig["keepontop"] else ""
         )
 
+    def showmenu2(self, _):
+        from elawidgettools import ElaMenu, ElaIcon, ElaIconType
+
+        trayMenu = ElaMenu(self)
+        settingAction = LAction(
+            ElaIcon.getInstance().getElaIcon(ElaIconType.IconName.Gear),
+            "设置",
+            trayMenu,
+        )
+        quitAction = LAction(
+            ElaIcon.getInstance().getElaIcon(ElaIconType.IconName.Xmark),
+            "退出",
+            trayMenu,
+        )
+        return trayMenu, settingAction, quitAction
+
     def showmenu(self, _):
         child = self.titlebar.childAt(_)
         if child and child.objectName():
             return
-        trayMenu = QMenu(gobject.baseobject.commonstylebase)
-        settingAction = LAction(qtawesome.icon("fa.gear"), "设置", trayMenu)
-        quitAction = LAction(qtawesome.icon("fa.times"), "退出", trayMenu)
+        if gobject.istest:
+            trayMenu, settingAction, quitAction = self.showmenu2(_)
+        else:
+            trayMenu = QMenu(gobject.baseobject.commonstylebase)
+            settingAction = LAction(qtawesome.icon("fa.gear"), "设置", trayMenu)
+            quitAction = LAction(qtawesome.icon("fa.times"), "退出", trayMenu)
         trayMenu.addAction(settingAction)
         trayMenu.addAction(quitAction)
         action = trayMenu.exec(QCursor.pos())
         if action == settingAction:
-            gobject.baseobject.settin_ui.showsignal.emit()
+            gobject.signals.settin_ui_showsignal.emit()
         elif action == quitAction:
             self.close()
 
@@ -1433,15 +1451,9 @@ class TranslatorWindow(resizableframeless):
         elif idx == 1:
             globalconfig["backtransparent"] = not globalconfig["backtransparent"]
             self.set_color_transparency()
-            try:
-                gobject.baseobject.settin_ui.horizontal_slider.setEnabled(
-                    not globalconfig["backtransparent"]
-                )
-                gobject.baseobject.settin_ui.horizontal_slider_label.setEnabled(
-                    not globalconfig["backtransparent"]
-                )
-            except:
-                pass
+            gobject.signals.backtransparentstatus.emit(
+                not globalconfig["backtransparent"]
+            )
         self.refreshtoolicon()
 
     def showhideocrrange(self):
@@ -1464,26 +1476,18 @@ class TranslatorWindow(resizableframeless):
         gobject.baseobject.hwnd = hwnd if pid != _pid else None
 
     def changeshowhideraw(self):
-        try:
-            gobject.baseobject.settin_ui.show_original_switch.clicksignal.emit()
-        except:
-            globalconfig["isshowrawtext"] = not globalconfig["isshowrawtext"]
-            self.refreshtoolicon()
-            self.translate_text.showhideorigin(globalconfig["isshowrawtext"])
-            try:
-                gobject.baseobject.settin_ui.fenyinsettings.setEnabled(
-                    globalconfig["isshowrawtext"]
-                )
-            except:
-                pass
+        isshowrawtext = not globalconfig["isshowrawtext"]
+        globalconfig["isshowrawtext"] = isshowrawtext
+        gobject.signals.show_original_switch.emit(isshowrawtext)
+        self.refreshtoolicon()
+        self.translate_text.showhideorigin(isshowrawtext)
+        gobject.signals.fenyinsettings.emit(isshowrawtext)
 
     def changeshowhidetrans(self):
-        try:
-            gobject.baseobject.settin_ui.show_fany_switch.clicksignal.emit()
-        except:
-            globalconfig["showfanyi"] = not globalconfig["showfanyi"]
-            self.refreshtoolicon()
-            gobject.baseobject.maybeneedtranslateshowhidetranslate()
+        globalconfig["showfanyi"] = not globalconfig["showfanyi"]
+        gobject.signals.show_fany_switch.emit(globalconfig["showfanyi"])
+        self.refreshtoolicon()
+        gobject.baseobject.maybeneedtranslateshowhidetranslate()
 
     def changeTranslateMode(self):
         globalconfig["autorun"] = not globalconfig["autorun"]
