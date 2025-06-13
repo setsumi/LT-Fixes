@@ -300,6 +300,7 @@ LunaHost::LunaHost()
     wsprintf(vs, L" | %s v%d.%d.%d", TR[VersionCurrent], LUNA_VERSION[0], LUNA_VERSION[1], LUNA_VERSION[2]);
     title += vs;
     settext(title);
+	/*
     std::thread([&]()
                 {
             if (HttpRequest httpRequest{
@@ -317,6 +318,7 @@ LunaHost::LunaHost()
                 catch(std::exception&e){}
             } })
         .detach();
+	*/
 }
 void LunaHost::on_text_recv_checkissaved(TextThread &thread)
 {

@@ -19,7 +19,8 @@
 - **\[upstream\]** Removed Favorites feature (v9.3.1 and later)
 - **\[upstream\]** Removed built-in OCR which had a lot of errors (v9.4.5)
 - **\[upstream\]** Introduced new built-in OCR (v10.0.0.5 and later)
-- Disabled random nagging in settings dialog (10.3.2.4 and later)
+- Disabled nagging in settings dialog (10.3.2.4 and later)
+- Disabled new version check in LunaHook (v10.5.4 and later)
 
 ### Download
 
