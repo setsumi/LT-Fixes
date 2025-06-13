@@ -50,7 +50,7 @@
     "imagewrapmode": 0,
     "rendertext_using_internal": {
         "webview": "yinying",
-        "textbrowser": "yinying"
+        "textbrowser": "miaobian1"
     },
     "rendertext": {
         "webview": {
@@ -780,12 +780,6 @@
                 "use": false,
                 "tip": "可选取的",
                 "icon": "fa.i-cursor",
-                "align": 0
-            },
-            "editable": {
-                "use": false,
-                "tip": "可编辑的",
-                "icon": "fa.italic",
                 "align": 0
             },
             "searchwordW": {
@@ -1905,7 +1899,6 @@
         }
     ],
     "selectable": true,
-    "editable": false,
     "selectableEx": false,
     "autoupdate": true,
     "proxies": null,

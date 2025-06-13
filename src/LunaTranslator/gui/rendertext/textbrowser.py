@@ -70,9 +70,9 @@ class Qlabel_c(QLabel_w):
                 try:
                     if self.pr:
                         if event.button() == Qt.MouseButton.LeftButton:
-                            gobject.baseobject.clickwordcallback(self.word, False)
+                            gobject.base.clickwordcallback(self.word, False)
                         elif event.button() == Qt.MouseButton.RightButton:
-                            gobject.baseobject.clickwordcallback(self.word, True)
+                            gobject.base.clickwordcallback(self.word, True)
                 except:
                     print_exc()
             self.pr = False
@@ -168,10 +168,10 @@ class QTextBrowser_1(QTextEdit):
             if label and label.refmask.word:
                 if event.button() == Qt.MouseButton.LeftButton:
                     if self.prpos == event.pos() or not self.pr:
-                        gobject.baseobject.clickwordcallback(label.refmask.word, False)
+                        gobject.base.clickwordcallback(label.refmask.word, False)
                 elif event.button() == Qt.MouseButton.RightButton:
                     if not self.pr:
-                        gobject.baseobject.clickwordcallback(label.refmask.word, True)
+                        gobject.base.clickwordcallback(label.refmask.word, True)
                         return event.ignore()
         except:
             pass
@@ -291,19 +291,19 @@ class TextBrowser(QWidget, dataget):
         currlabel = self.textbrowser.getcurrlabel(p)
         if currlabel and currlabel.isVisible():
             return
-        menu = QMenu(gobject.baseobject.commonstylebase)
+        menu = QMenu(gobject.base.commonstylebase)
         search = LAction("清空", menu)
         menu.addAction(search)
         action = menu.exec(QCursor.pos())
         if action == search:
             self.parent().clear()
-            gobject.baseobject.currenttext = ""
+            gobject.base.currenttext = ""
 
     def showmenu(self, p):
         curr = self.textbrowser.textCursor().selectedText()
         if not curr:
             return self.menunoselect(p)
-        menu = QMenu(gobject.baseobject.commonstylebase)
+        menu = QMenu(gobject.base.commonstylebase)
 
         search = LAction("查词", menu)
         translate = LAction("翻译", menu)
@@ -316,13 +316,13 @@ class TextBrowser(QWidget, dataget):
         menu.addAction(copy)
         action = menu.exec(QCursor.pos())
         if action == search:
-            gobject.baseobject.searchwordW.search_word.emit(curr, None, False)
+            gobject.base.searchwordW.search_word.emit(curr, None, False)
         elif action == copy:
             NativeUtils.ClipBoard.text = curr
         elif action == tts:
-            gobject.baseobject.read_text(curr)
+            gobject.base.read_text(curr)
         elif action == translate:
-            gobject.baseobject.textgetmethod(curr, False)
+            gobject.base.textgetmethod(curr, False)
 
     def __init__(self, parent) -> None:
         super().__init__(parent)
@@ -439,9 +439,6 @@ class TextBrowser(QWidget, dataget):
     def setselectable(self, b):
         self.masklabel.setHidden(b)
 
-    def seteditable(self, _):
-        pass
-
     def _setnextfont(self, font, cleared):
         if cleared:
             self.textbrowser.setFont(font)
@@ -537,8 +534,12 @@ class TextBrowser(QWidget, dataget):
             text = name + " " + text
         return text
 
+    def updatetext(self, *_):
+        pass
+
     def iter_append(
         self,
+        clear,
         iter_context_class,
         texttype: TextType,
         name,
@@ -546,6 +547,8 @@ class TextBrowser(QWidget, dataget):
         color: ColorControl,
         klass,
     ):
+        if clear:
+            self.clear()
         if self.checkskip(texttype):
             return
         text = self.checkaddname(name, text)
@@ -600,6 +603,8 @@ class TextBrowser(QWidget, dataget):
 
     def append(
         self,
+        updateTranslate,
+        clear,
         texttype: TextType,
         name,
         text,
@@ -607,6 +612,9 @@ class TextBrowser(QWidget, dataget):
         color: ColorControl,
         klass,
     ):
+        updateTranslate  # unuse
+        if clear:
+            self.clear()
         if self.checkskip(texttype):
             return
         text = self.checkaddname(name, text)
@@ -786,13 +794,14 @@ class TextBrowser(QWidget, dataget):
             self.textcursor.setPosition(b.position())
             self.textcursor.setBlockFormat(tf)
             self.textbrowser.setTextCursor(self.textcursor)
+
     @property
     def ProportionalHeight(self):
-        _= QTextBlockFormat.LineHeightTypes.ProportionalHeight
+        _ = QTextBlockFormat.LineHeightTypes.ProportionalHeight
         if not isqt5:
-            _= _.value
+            _ = _.value
         return _
-        
+
     def _setlineheight(self, b1, b2, texttype: TextType, klass: str):
         if texttype == TextType.Origin:
             fh = globalconfig["lineheights"]

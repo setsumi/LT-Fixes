@@ -249,7 +249,7 @@ class voiceselect(LDialog):
         self.datas["vis"] = self.datas["visx"]
         self.datas["voice"] = None
         try:
-            self.object = gobject.baseobject.loadreader(internal, init=False)
+            self.object = gobject.base.loadreader(internal, init=False)
             self.voicelistsignal.emit(self.object)
         except:
 
@@ -528,6 +528,7 @@ class autoinitdialog(LDialog):
                     if text:
                         text += "\n"
                     text += e.args[1]
+                print(title, text)
                 QMessageBox.information(self, title, text)
             else:
                 QMessageBox.information(self, str(type(e))[8:-2], str(e))

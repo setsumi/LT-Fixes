@@ -138,9 +138,16 @@ namespace
         if (!AddBreakPoint)
             return false;
         BYTE sig2[] = {0x41, 0x57, 0x41, 0x56, 0x41, 0x54};
-        AddBreakPoint = (decltype(AddBreakPoint))reverseFindBytes(sig2, sizeof(sig2), (uintptr_t)AddBreakPoint - 0x600, (uintptr_t)AddBreakPoint, 0, true);
-        if (!AddBreakPoint)
+        auto AddBreakPoint_1 = (decltype(AddBreakPoint))reverseFindBytes(sig2, sizeof(sig2), (uintptr_t)AddBreakPoint - 0x600, (uintptr_t)AddBreakPoint, 0, true);
+        if (!AddBreakPoint_1)
+        {
+            // 2.2.0 stable
+            BYTE sig3[] = {0x41, 0x57, 0x41, 0x56, 0x56, 0x57, 0x55, 0x53};
+            AddBreakPoint_1 = (decltype(AddBreakPoint))reverseFindBytes(sig3, sizeof(sig3), (uintptr_t)AddBreakPoint - 0x40, (uintptr_t)AddBreakPoint, 0, true);
+        }
+        if (!AddBreakPoint_1)
             return false;
+        AddBreakPoint = AddBreakPoint_1;
         return true;
     }
     bool find_cpuRegistersPack()
@@ -260,7 +267,6 @@ bool PCSX2_UserHook_delayinsert(uint32_t addr)
 bool PCSX2::attach_function1()
 {
     auto minver = std::make_tuple(1u, 7u, 4473u, 0u);
-    auto version = queryversion();
     if (version && version < minver)
         return false;
     if (!hookFunctions())
@@ -351,11 +357,6 @@ bool PCSX2::attach_function1()
         //{(void *)psxDynarecCheckBreakpoint, +[]() {}},
     };
     patch_fun_ptrs_patch_once();
-    for (auto &&[addr, op] : emfunctionhooks)
-    {
-        if (!(op.type & DIRECT_READ))
-            SafeAddBreakPoint(addr);
-    }
     return true;
 }
 

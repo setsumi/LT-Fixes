@@ -7,6 +7,7 @@ from gui.rendertext.texttype import (
     FenciColor,
 )
 import gobject, windows, json, os, functools, time
+import hashlib
 from urllib.parse import quote
 from myutils.config import globalconfig, static_data, _TR
 from myutils.wrapper import threader
@@ -31,7 +32,6 @@ class somecommon(dataget):
     def __init__(self):
         self.colorset = set()
         self.ts_klass = {}
-        self.saveiterclasspointer = {}
 
     def debugeval(self, js: str): ...
     def refreshcontent(self): ...
@@ -39,7 +39,6 @@ class somecommon(dataget):
         self.colorset.clear()
         self.ts_klass.clear()
         self.setselectable(globalconfig["selectable"])
-        self.seteditable(globalconfig["editable"])
         self.showhideerror(globalconfig["showtranexception"])
         self.showhideorigin(globalconfig["isshowrawtext"])
         self.showhidetranslate(globalconfig["showfanyi"])
@@ -67,9 +66,6 @@ class somecommon(dataget):
 
     def setdisplayrank(self, rank):
         self.debugeval("setdisplayrank({})".format(int(rank)))
-
-    def seteditable(self, b):
-        self.debugeval("seteditable({})".format(int(b)))
 
     def setselectable(self, b):
         self.debugeval("setselectable({})".format(int(b)))
@@ -168,31 +164,35 @@ class somecommon(dataget):
     def clear_all(self):
         self.debugeval("clear_all()")
 
-    def create_internal_text(self, style, styleargs, _id, name, text, args):
+    def create_internal_text(self, clear, style, styleargs, _id, name, text, args):
         name = quote(name)
         text = quote(text)
         args = quote(json.dumps(args))
         styleargs = quote(json.dumps(styleargs))
         self.debugeval(
-            'create_internal_text("{}","{}","{}","{}","{}","{}");'.format(
-                style, styleargs, _id, name, text, args
+            'create_internal_text({},"{}","{}","{}","{}","{}","{}");'.format(
+                int(clear), style, styleargs, _id, name, text, args
             )
         )
 
     def create_internal_rubytext(
-        self, style, styleargs, _id, tag: "list[wordwithcolor]", args
+        self, clear, style, styleargs, _id, tag: "list[wordwithcolor]", args
     ):
         tag = quote(json.dumps(tuple(_.as_dict() for _ in tag)))
         args = quote(json.dumps(args))
         styleargs = quote(json.dumps(styleargs))
         self.debugeval(
-            'create_internal_rubytext("{}","{}","{}","{}","{}");'.format(
-                style, styleargs, _id, tag, args
+            'create_internal_rubytext({},"{}","{}","{}","{}","{}");'.format(
+                int(clear), style, styleargs, _id, tag, args
             )
         )
 
+    def updatetext(self, texttype: TextType, text, hira, color: ColorControl):
+        self.append(False, False, texttype, "", text, hira, color, None)
+
     def iter_append(
         self,
+        clear,
         iter_context_class,
         texttype: TextType,
         name,
@@ -200,23 +200,34 @@ class somecommon(dataget):
         color: ColorControl,
         klass,
     ):
-
-        if iter_context_class not in self.saveiterclasspointer:
-            _id = self.createtextlineid(texttype, klass)
-            self.saveiterclasspointer[iter_context_class] = _id
-
-        _id = self.saveiterclasspointer[iter_context_class]
-        self._webview_append(_id, name, text, [], color)
+        _id = self.createtextlineid(texttype, klass)
+        self._webview_append(clear, _id, name, text, [], color)
 
     def createtextlineid(self, texttype: TextType, klass: str):
         self.setfontextra(klass)
-        _id = "luna_{}".format(uuid.uuid4())
+        _id = "luna_{}".format(
+            hashlib.md5((str(texttype) + str(klass)).encode()).hexdigest()
+        )
         self.create_div_line_id(_id, texttype, klass)
         return _id
 
-    def append(self, texttype: TextType, name, text, tag, color: ColorControl, klass):
+    def append(
+        self,
+        updateTranslate,
+        clear,
+        texttype: TextType,
+        name,
+        text,
+        tag,
+        color: ColorControl,
+        klass,
+    ):
         _id = self.createtextlineid(texttype, klass)
-        self._webview_append(_id, name, text, tag, color)
+        if updateTranslate:
+            if clear:
+                self.debugeval('cleartranslate("{}")'.format(_id))
+            return
+        self._webview_append(clear, _id, name, text, tag, color)
 
     def _getstylevalid(self):
         currenttype = globalconfig["rendertext_using_internal"]["webview"]
@@ -228,7 +239,13 @@ class somecommon(dataget):
         return currenttype
 
     def _webview_append(
-        self, _id, name, text: str, tag: "list[WordSegResult]", color: ColorControl
+        self,
+        clear,
+        _id,
+        name,
+        text: str,
+        tag: "list[WordSegResult]",
+        color: ColorControl,
     ):
         self._setcolors(color)
         style = self._getstylevalid()
@@ -245,21 +262,18 @@ class somecommon(dataget):
                 color=color.asklass(),
                 kanacolor=SpecialColor.KanaColor.asklass(),
             )
-            self.create_internal_rubytext(style, styleargs, _id, tagx, args)
+            self.create_internal_rubytext(clear, style, styleargs, _id, tagx, args)
         else:
             sig = "LUNASHOWHTML"
             userawhtml = text.startswith(sig)
             if userawhtml:
                 text = text[len(sig) :]
-
             args = dict(color=color.asklass(), userawhtml=userawhtml)
-
-            self.create_internal_text(style, styleargs, _id, name, text, args)
+            self.create_internal_text(clear, style, styleargs, _id, name, text, args)
 
     def clear(self):
 
         self.clear_all()
-        self.saveiterclasspointer.clear()
 
     def _setcolors(self, color: ColorControl = None):
         if color in self.colorset:
@@ -302,7 +316,7 @@ class TextBrowser(WebviewWidget, somecommon):
         return super().event(a0)
 
     def __starttrans0checker(self):
-        if gobject.baseobject.translation_ui.transparent_value_actually == 0:
+        if gobject.base.translation_ui.transparent_value_actually == 0:
             self.trans0checker.start()
         else:
             self.trans0checker.stop()
@@ -353,7 +367,7 @@ class TextBrowser(WebviewWidget, somecommon):
         rb = windows.GetKeyState(windows.VK_RBUTTON) < 0
         if lb or rb:
             return
-        gobject.baseobject.clickwordcallback(word, rb1)
+        gobject.base.clickwordcallback(word, rb1)
 
     def __init__(self, parent) -> None:
         super().__init__(parent, transp=True, loadext=globalconfig["webviewLoadExt"])
@@ -363,7 +377,7 @@ class TextBrowser(WebviewWidget, somecommon):
             0,
             lambda: _TR("查词"),
             threader(
-                lambda w: gobject.baseobject.searchwordW.search_word.emit(
+                lambda w: gobject.base.searchwordW.search_word.emit(
                     w.replace("\n", "").strip(), None, False
                 )
             ),
@@ -371,15 +385,15 @@ class TextBrowser(WebviewWidget, somecommon):
         nexti = self.add_menu(
             nexti,
             lambda: _TR("翻译"),
-            lambda w: gobject.baseobject.textgetmethod(w.replace("\n", "").strip()),
+            lambda w: gobject.base.textgetmethod(w.replace("\n", "").strip()),
         )
         nexti = self.add_menu(
             nexti,
             lambda: _TR("朗读"),
-            lambda w: gobject.baseobject.read_text(w.replace("\n", "").strip()),
+            lambda w: gobject.base.read_text(w.replace("\n", "").strip()),
         )
         self.add_menu_noselect(0, lambda: _TR("清空"), self.___cleartext)
-        self.bind("calllunaclickedword", gobject.baseobject.clickwordcallback)
+        self.bind("calllunaclickedword", gobject.base.clickwordcallback)
         self.bind("calllunaMouseMove", self.calllunaMouseMove)
         self.bind("calllunaMousePress", self.calllunaMousePress)
         self.bind("calllunaMouseRelease", self.calllunaMouseRelease)
@@ -407,10 +421,10 @@ class TextBrowser(WebviewWidget, somecommon):
 
     def ___cleartext(self):
         self.parent().clear()
-        gobject.baseobject.currenttext = ""
+        gobject.base.currenttext = ""
 
     def refreshcontent(self):
-        gobject.baseobject.translation_ui.translate_text.refreshcontent()
+        gobject.base.translation_ui.translate_text.refreshcontent()
 
     def refreshcontent_before(self):
         self.debugeval("refreshcontent_before()")

@@ -87,6 +87,16 @@ namespace
         StringFilter(buffer, TEXTANDLEN("%P"));
         StringFilter(buffer, TEXTANDLEN("%K"));
     }
+    void SLPM55159(TextBuffer *buffer, HookParam *hp)
+    {
+        SLPM55170(buffer, hp);
+        StringReplacer(buffer, TEXTANDLEN("\x81\xe1\x81\x5c\x81\x5c\x81\xe2"), TEXTANDLEN("\x81\x5c\x81\x5c\x81\x5c\x81\x5c"));
+        auto s = buffer->strA();
+        static std::string last;
+        if (last == s)
+            return buffer->clear();
+        last = s;
+    }
     void SLPM62343(TextBuffer *buffer, HookParam *hp)
     {
         CharFilter(buffer, '\n');
@@ -221,10 +231,51 @@ namespace
         }
         last = s;
     }
+    void SLPM55240(TextBuffer *buffer, HookParam *hp)
+    {
+        StringReplacer(buffer, TEXTANDLEN("%x02―%x01"), TEXTANDLEN("――"));
+    }
     void FSLPM55195(TextBuffer *buffer, HookParam *hp)
     {
         StringFilter(buffer, TEXTANDLEN("%n\x81\x40"));
         StringFilter(buffer, TEXTANDLEN("%n"));
+    }
+    void SLPM55154(TextBuffer *buffer, HookParam *hp)
+    {
+        static lru_cache<std::string> cache(4);
+        static std::string last;
+        static std::string last2;
+        auto s = buffer->strA();
+        strReplace(s, "\n");
+        strReplace(s, "\r");
+        if (startWith(s, "cdrom0"))
+            return buffer->clear();
+        if (endWith(last, s))
+        {
+            return buffer->clear();
+        }
+        if (s.size())
+        {
+            last = s;
+            if (cache.touch(s))
+            {
+                return buffer->clear();
+            }
+            if (last2 == s)
+            {
+                return buffer->clear();
+            }
+            last2 = s;
+        }
+    }
+    void SLPM55185(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilter(buffer, TEXTANDLEN("%n"));
+        static std::string last;
+        auto s = buffer->strA();
+        if (last == s)
+            return buffer->clear();
+        last = s;
     }
     void FSLPM66293(TextBuffer *buffer, HookParam *hp)
     {
@@ -880,6 +931,10 @@ namespace
             collect.clear();
         }
     }
+    void SLPM55184(TextBuffer *buffer, HookParam *hp)
+    {
+        StringFilter(buffer, TEXTANDLEN("\x81\xa1"));
+    }
     void SLPM65786(TextBuffer *buffer, HookParam *hp)
     {
         auto w = *(WORD *)buffer->buff;
@@ -888,6 +943,118 @@ namespace
             buffer->clear();
         }
     }
+    void SLPM55156(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strA();
+        static std::string last;
+        if (endWith(last, s))
+            return buffer->clear();
+        last = s;
+        strReplace(s, "\n");
+        buffer->from(s);
+    }
+    void SLPM55052(TextBuffer *buffer, HookParam *hp)
+    {
+        auto s = buffer->strA();
+        s = s.substr(0, s.find("\\\r"));
+        static std::string last;
+        if (endWith(last, s))
+            return buffer->clear();
+        last = s;
+        s = re::sub(s, "<[A-Z].*?[\\dA-Z]>");
+        strReplace(s, "\n");
+        strReplace(s, "\r");
+        buffer->from(s);
+    }
+    void SLPM55197(TextBuffer *buffer, HookParam *hp)
+    {
+        static std::string last;
+        auto s = buffer->strA();
+        if (endWith(last, s))
+            return buffer->clear();
+        last = s;
+        buffer->from(strReplace(strReplace(s, "%P"), "%K"));
+    }
+    void SLPS25135(hook_context *context, HookParam *hp1, TextBuffer *buffer, uintptr_t *split)
+    {
+        const uintptr_t val1 = PCSX2_REG(a1);
+        const uintptr_t val2 = (val1 & 0x0000FFFF);
+        const uintptr_t sjis = ((val2 & 0xFF) << 8) | ((val2 >> 8) & 0xFF);
+        buffer->from_t(sjis);
+    }
+    void SLPS25759(hook_context *context, HookParam *hp1, TextBuffer *buffer, uintptr_t *split)
+    {
+        const uintptr_t val_v0 = PCSX2_REG(v0);
+        const uintptr_t val_a0 = PCSX2_REG(a0);
+        const uintptr_t p1 = val_v0 & 0x0FFFFFFF;
+        uint8_t *storageptr = (uint8_t *)emu_addr(p1);
+        if (storageptr == nullptr || !storageptr)
+        {
+            return;
+        }
+        const uint8_t b0 = *(storageptr - 1);
+        const uint8_t b1 = (uint8_t)(val_a0 & 0x000000FF);
+
+        const uintptr_t sjis = ((uintptr_t)b1 << 8) | b0;
+
+        buffer->from_t(sjis);
+    }
+    void SLPS25051(hook_context *context, HookParam *hp1, TextBuffer *buffer, uintptr_t *split)
+    {
+        static bool send = false;
+        static uint8_t store = 0x00;
+        const uintptr_t val1 = PCSX2_REG(v0);
+        const uintptr_t val2 = (val1 & 0x000000FF);
+        const uint8_t byteval = (uint8_t)val2;
+
+        if (byteval == 0x00)
+        {
+            return;
+        }
+
+        if (!send)
+        {
+            store = byteval;
+        }
+        else
+        {
+            uint8_t b0 = store;
+            uint8_t b1 = byteval;
+
+            // game uses ・ (81 45) at newlines and sentence ends
+            // i'm replacing these with ASCII space ' ' (00 20)
+            // probably should be fixed in a filter func instead, but whatever
+            if (b0 == 0x81 && b1 == 0x45)
+            {
+                b0 = 0x00;
+                b1 = 0x20;
+            }
+
+            const uintptr_t sjis = ((uintptr_t)b1 << 8) | b0;
+
+            buffer->from_t(sjis);
+            store = 0x00;
+        }
+
+        send = !send;
+    }
+    void SLPM66452(hook_context *context, HookParam *hp1, TextBuffer *buffer, uintptr_t *split)
+    {
+        const uintptr_t val1 = PCSX2_REG(v0);
+        const uintptr_t val2 = (val1 & 0x0000FFFF);
+
+        if (!val2)
+        {
+            return;
+        }
+
+        const uintptr_t sjis = ((val2 & 0xFF) << 8) | ((val2 >> 8) & 0xFF);
+        buffer->from_t(sjis);
+    }
+    void SLPM55225(hook_context *context, HookParam *hp1, TextBuffer *buffer, uintptr_t *split)
+    {
+        buffer->from_t(*(char *)PCSX2_REG(a0));
+    }
 }
 struct emfuncinfoX
 {
@@ -895,6 +1062,50 @@ struct emfuncinfoX
     emfuncinfo info;
 };
 static const emfuncinfoX emfunctionhooks_1[] = {
+    // ヒャッコ よろずや事件簿！
+    {0x17B6D4, {0, PCSX2_REG_OFFSET(a1), 0, 0, SLPM55159, "SLPM-55159"}},
+    // トリガーハート エグゼリカ エンハンスド
+    {0x324694, {0, PCSX2_REG_OFFSET(s0), 0, 0, SLPM55052, "SLPM-55052"}},
+    // Memories Off 6 Next Relation
+    {0x17F334, {0, PCSX2_REG_OFFSET(v1), 0, 0, SLPM55197, "SLPM-55197"}},
+    // メルティブラッド アクトレスアゲイン [通常版]
+    {0x853710, {DIRECT_READ, 0, 0, 0, SLPM55184, "SLPM-55184"}},
+    // つよきす2学期 ～Swift Love～ [通常版]
+    {0x19E41C, {0, PCSX2_REG_OFFSET(a1), 0, 0, SLPM55154, "SLPM-55154"}},
+    // Sweet Honey Coming [DXパック]
+    {0x1DDB4D0, {DIRECT_READ, 0, 0, 0, SLPM55185, "SLPM-55185"}},
+    // お掃除戦隊くりーんきーぱー H [通常版]
+    {0x14658A4, {DIRECT_READ, 0, 0, 0, FSLPM65997, "SLPM-55220"}},
+    // 顔のない月 Select story
+    {0xB3FCDC, {DIRECT_READ, 0, 0, 0, 0, "SLPM-62784"}},
+    // ef - A Fairy Tale of the Two. [初回限定特別同梱版]
+    {0xA10588, {DIRECT_READ, 0, 0, 0, SLPM55240, "SLPM-55240"}},
+    // スズノネセブン！～Rebirth Knot～
+    {0x1FF9A70, {DIRECT_READ, 0, 0, 0, FSLPM55195, "SLPM-55243"}},
+    // 萌え萌え2次大戦(略)2[chu～♪] [通常版]
+    {0x1A2690, {0, PCSX2_REG_OFFSET(t4), 0, 0, SLPM65396, "SLPS-25956"}},
+    // ストライクウィッチーズ あなたとできること [通常版]
+    {0x10A948, {USING_CHAR | DATA_INDIRECT, PCSX2_REG_OFFSET(a0), 0, 0, 0, "SLPM-55174"}},
+    // 真・恋姫†夢想 ～乙女繚乱☆三国志演義～ [通常版]
+    {0xBC9740, {DIRECT_READ, 0, 0, 0, SLPM65843, "SLPM-55288"}},
+    // 神曲奏界ポリフォニカ アフタースクール
+    {0x32A3F0, {DIRECT_READ, 0, 0, 0, 0, "SLPM-55270"}},
+    // 戦極姫 ～戦乱に舞う乙女達～
+    {0x13C16C, {0, 0, 0, SLPM55225, 0, "SLPM-55225"}},
+    // 戦極姫2・炎 ～百華、戦乱辰風の如く～
+    {0x1C5D7C, {0, PCSX2_REG_OFFSET(v0), 0, 0, 0, "SLPM-55278"}},
+    // 花と乙女に祝福を ～春風の贈り物～
+    {0x109C5C, {USING_CHAR | DATA_INDIRECT, PCSX2_REG_OFFSET(a1), 0, 0, SLPM65786, "SLPM-55263"}},
+    // Monochrome (モノクローム)
+    {0x4B7A60, {DIRECT_READ, 0, 0, 0, SLPM55170, "SLPM-65682"}},
+    // Missing Blue [通常版]
+    {0x12A80C, {0, 0, 0, SLPS25051, 0, "SLPS-25051"}}, //@mills
+    // 四八 （仮）
+    {0x17529C, {0, 0, 0, SLPS25759, 0, "SLPS-25759"}}, //@mills
+    // かまいたちの夜2 ～監獄島のわらべ唄～ [通常版]
+    {0x111C78, {0, 0, 0, SLPS25135, 0, "SLPS-25135"}}, //@mills
+    // かまいたちの夜x3 三日月島事件の真相
+    {0x112830, {0, 0, 0, SLPM66452, 0, "SLPM-66452"}}, //@mills
     // 桃華月憚 ～光風の陵王～
     {0x29AB3C, {0, 0, 0, 0, 0, "SLPM-55200"}},
     // 夏色の砂時計
@@ -969,6 +1180,8 @@ static const emfuncinfoX emfunctionhooks_1[] = {
     {0x461F38, {DIRECT_READ, 0, 0, SLPS25150, 0, "SLPS-25150"}},
     // D.C. ～ダ・カーポ～ the Origin
     {0x517688, {DIRECT_READ, 0, 0, 0, SLPM66905, "SLPM-66905"}},
+    // D.C.I.F. ～ダ・カーポ～イノセント・フィナーレ～ [通常版]
+    {0x114068, {0, PCSX2_REG_OFFSET(a0), 0, 0, SLPM55156, "SLPM-55156"}},
     // Soul Link EXTENSION
     {0x1E14A3C, {DIRECT_READ, 0, 0, 0, SLPM66437, "SLPM-66437"}},
     // デ・ジ・キャラット ファンタジー エクセレント

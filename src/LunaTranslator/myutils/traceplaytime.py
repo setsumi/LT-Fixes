@@ -1,9 +1,10 @@
-import sqlite3, gobject, threading, time, windows
+import sqlite3, gobject, time, windows
 import time
-import os, threading
+import os
 from qtsymbols import *
 from myutils.config import findgameuidofpath, globalconfig
-from myutils.hwnd import getpidexe, ListProcess
+from myutils.hwnd import ListProcess
+from myutils.wrapper import threader
 import windows
 import gobject
 
@@ -95,15 +96,15 @@ class playtimemanager:
     def stricttraceexe(self):
         hwnd = windows.GetForegroundWindow()
         pid = windows.GetWindowThreadProcessId(hwnd)
-        exe = getpidexe(pid)
+        exe = windows.GetProcessFileName(pid)
         exes = set()
         exes.add(exe)
 
-        gamehwnd = gobject.baseobject.hwnd
+        gamehwnd = gobject.base.hwnd
         if gamehwnd:
             gamepid = windows.GetWindowThreadProcessId(gamehwnd)
             if gamepid and pid == os.getpid():
-                exes.add(getpidexe(gamepid))
+                exes.add(windows.GetProcessFileName(gamepid))
         return exes
 
     def finduids(self, exes):
@@ -136,6 +137,7 @@ class playtimemanager:
             if k not in uids:
                 dic.pop(k)
 
+    @threader
     def checkgameplayingthread(self):
         self.trace_loose = {}
         self.trace_strict = {}
