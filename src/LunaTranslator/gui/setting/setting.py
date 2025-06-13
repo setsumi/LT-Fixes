@@ -118,3 +118,4 @@ class Setting(closeashidewindow):
         do()
         self.tab_widget.adjust_list_widget_width()
         last = self.tab_widget.list_widget.count() - 1
+        self.tab_widget.setCurrentIndex(0)
