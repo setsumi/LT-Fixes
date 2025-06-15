@@ -556,7 +556,9 @@ class TranslatorWindow(resizableframeless):
                 clear, iter_context_class, texttype, name, text, color, klass
             )
         else:
-            self.translate_text.append(updateTranslate, clear, texttype, name, text, hira, color, klass)
+            self.translate_text.append(
+                updateTranslate, clear, texttype, name, text, hira, color, klass
+            )
         self.autodisappear()
 
     @property

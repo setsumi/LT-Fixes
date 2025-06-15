@@ -1,7 +1,8 @@
 from qtsymbols import *
 import os, functools, hashlib, json, math, csv, io, pickle
 from traceback import print_exc
-import windows, qtawesome, NativeUtils, gobject, threading
+import windows, qtawesome, NativeUtils, gobject
+from gobject import runtime_for_xp
 from myutils.config import _TR, _TRL, globalconfig, mayberelpath
 from myutils.wrapper import Singleton, threader, tryprint
 from myutils.utils import nowisdark, checkisusingwine
@@ -3549,7 +3550,7 @@ def limitpos(pos: QPoint, w: QWidget, offset: QPoint):
 class PopupWidget(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
-        self.setWindowFlag(Qt.WindowType.Popup)
+        self.setWindowFlags(Qt.WindowType.Popup | self.windowFlags())
         self.dragging = False
         self.offset = None
 
