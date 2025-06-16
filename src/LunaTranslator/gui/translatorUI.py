@@ -81,7 +81,7 @@ class IconLabelX(LLabel):
 
     def resizeEvent(self, e: QResizeEvent):
         h = int(e.size().height() / gobject.Consts.toolscale)
-        self.setIconSize(QSize(h, h))
+        self.setIconSize(QSize(int(h * gobject.Consts.IconSizeHW), h))
 
     def setIcon(self, icon: QIcon):
         self._icon = icon
@@ -1208,7 +1208,7 @@ class TranslatorWindow(resizableframeless):
                 _path.append(filer)
                 savehook_new_data[gameuid]["gamejsonfile"] = _path
                 self.displaystatus.emit(
-                    _TR("成功添加_Mecab_路径_ " + filer), TextType.Info
+                    _TR("成功添加_json翻译文件_ " + filer), TextType.Info
                 )
         except:
             print_exc()
