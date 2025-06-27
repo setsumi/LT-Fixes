@@ -557,12 +557,17 @@ def GetSelectedText():
     return ""
 
 
-SimpleCreateEvent = utilsdll.SimpleCreateEvent
-SimpleCreateEvent.argtypes = (LPCWSTR,)
-SimpleCreateEvent.restype = AutoHandle
-SimpleCreateMutex = utilsdll.SimpleCreateMutex
-SimpleCreateMutex.argtypes = (LPCWSTR,)
-SimpleCreateMutex.restype = AutoHandle
+GetSecurityAttributes = utilsdll.GetSecurityAttributes
+GetSecurityAttributes.restype = c_void_p
+
+
+def SimpleCreateEvent(name):
+    return windows.CreateEventW(GetSecurityAttributes(), False, False, name)
+
+
+def SimpleCreateMutex(name):
+    return windows.CreateMutexW(GetSecurityAttributes(), False, name)
+
 
 CreateAutoKillProcess = utilsdll.CreateAutoKillProcess
 CreateAutoKillProcess.argtypes = c_wchar_p, c_wchar_p, POINTER(DWORD)
