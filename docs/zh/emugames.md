@@ -359,6 +359,7 @@ LunaTranslator支持通过模拟器HOOK NS/PSP/PSV/PS2上的大量游戏。
 |  | 010081E0161B2000 | D.C.4 Fortunate Departures ～ダ・カーポ4～ フォーチュネイトデパーチャーズ |
 |  | 010048101D49E000 | Re;quartz零度 |
 |  | 0100B6501FE4C000 | 喧嘩番長 乙女 ダブルパック |
+|  | 01004CA01D51E000 | 喧嘩番長 乙女 2nd Rumble !! |
 |  | 010008401AB4A000 | 深淵のユカラ (Yukar From The Abyss) |
 |  | 010047E01E22A000 | 純愛聲放送 - Voice Love on Air (Voice Love on Air) |
 |  | 010033401FE40000 | 罪ノ光ランデヴー |
@@ -380,6 +381,7 @@ LunaTranslator支持通过模拟器HOOK NS/PSP/PSV/PS2上的大量游戏。
 
 |  | ID       | Game                |
 | ---- | ---------- | ------------------- |
+|  | ULJM05962 | 花と乙女に祝福を　～春風の贈り物～　portable |
 |  | ULJM06207 | Starry☆Sky～After Spring～Portable |
 |  | ULJM06208 | Starry☆Sky～After Summer～Portable |
 |  | ULJM06209 | Starry☆Sky～After Autumn～Portable |
@@ -862,6 +864,15 @@ LunaTranslator支持通过模拟器HOOK NS/PSP/PSV/PS2上的大量游戏。
 
 |  | ID       | Game                |
 | ---- | ---------- | ------------------- |
+|  | SLPM-66254 | ふぁいなりすと [通常版] |
+|  | SLPM-65552 | メタルウルフREV [初回限定版] |
+|  | SLPM-66245 | ジュエルスオーシャン Star of Sierra Leone |
+|  | SLPM-66296 | 闇夜にささやく ～探偵 相楽恭一郎～ [通常版] |
+|  | SLPM-66329 | 魔法先生ネギま！ 課外授業 乙女のドキドキ・ビーチサイド |
+|  | SLPS-25617 | e'tude prologue ～揺れ動く心のかたち～ |
+|  | SLPM-66331 | 高円寺女子サッカー 1st stage限定版 |
+|  | SLPM-66408 | つよきす ～Mighty Heart～ [通常版] |
+|  | SLPM-66357 | ローゼンメイデン ドゥエルヴァルツァ [通常版] |
 |  | SLPM-65296 & SLPM-65297 | F～ファナティック～ [初回限定版] |
 |  | SLPS-25257 | 想いのかけら ～Close to ～ |
 |  | SLPS-25508 | 舞-HiME 運命の系統樹 |
@@ -940,6 +951,7 @@ LunaTranslator支持通过模拟器HOOK NS/PSP/PSV/PS2上的大量游戏。
 |  | SLPM-55136 | Clear ～新しい風の吹く丘で～ |
 |  | SLPM-55159 | ヒャッコ よろずや事件簿！ |
 |  | SLPM-55052 | トリガーハート エグゼリカ エンハンスド |
+|  | SLPM-66352 | Memories Off ～それから again～ [限定版] |
 |  | SLPM-66791 | Memories Off #5 encore [通常版] |
 |  | SLPM-66988 | Memories Off 6 ～T-Wave～ [通常版] |
 |  | SLPM-55197 | Memories Off 6 Next Relation |
