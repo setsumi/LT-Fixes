@@ -1,6 +1,13 @@
 # LunaTranslator Fixes + LunaHook
 
-### Notes
+## Download
+
+LunaTranslator: https://github.com/setsumi/LT-Fixes/releases \
+LunaHook: https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true
+
+Legacy LunaHook v5.0.0 + Plugins: https://github.com/setsumi/LunaHook/releases
+
+## Notes
 
 - Changed app [icon](https://github.com/HIllya51/LunaTranslator/discussions/1109)
 - Disabled check for updates
@@ -21,10 +28,3 @@
 - **\[upstream\]** Introduced new built-in OCR (v10.0.0.5 and later)
 - Disabled nagging in settings dialog (10.3.2.4 and later)
 - Disabled new version check in LunaHook (v10.5.4 and later)
-
-### Download
-
-LunaTranslator: https://github.com/setsumi/LT-Fixes/releases \
-LunaHook: https://github.com/setsumi/LT-Fixes/releases?q=LunaHook&expanded=true
-
-Legacy LunaHook v5.0.0 + Plugins: https://github.com/setsumi/LunaHook/releases
