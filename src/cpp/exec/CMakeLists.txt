@@ -7,7 +7,7 @@ option(PYSTAND_CONSOLE "Build PyStand as a console application." OFF)
 include(FetchContent)
 
 file(DOWNLOAD
-    https://image.lunatranslator.org/luna.ico
+    https://github.com/setsumi/LT-Fixes/releases/download/icon/luna.ico
     ${CMAKE_BINARY_DIR}/luna.ico
 )
 
