@@ -288,7 +288,7 @@
         "clearText": false
     },
     "requestinterval": 0.5,
-    "keepontop": true,
+    "keepontop": false,
     "buttonsize": 20,
     "buttonsize2": 18,
     "language_setted_2.4.5": false,
@@ -771,7 +771,7 @@
                 "align": 2
             },
             "keepontop": {
-                "use": false,
+                "use": true,
                 "tip": "窗口置顶",
                 "icon": "fa.neuter",
                 "align": 2
